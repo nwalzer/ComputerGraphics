@@ -1,7 +1,7 @@
-function main()
-{
+function main() {
     // Retrieve <canvas> element
     var canvas = document.getElementById('webgl');
+
 
     // Get the rendering context for WebGL
     var gl = WebGLUtils.setupWebGL(canvas);
@@ -78,20 +78,26 @@ function main()
     }
 }
 
-function draw(){
-    var fileInput = document.getElementById("drawModeFile");
-    if(fileInput.files.length == 0){
-        console.log("No File Detected");
-        return;
-    } else if(fileInput.files.length == 1){
-        var file = fileInput.files[0];
-        console.log(file);
-        console.log(fileInput.files[0].toString());
-        console.log(fileInput.files[0].valueOf());
-        var contents = String(file.text());
-        console.log(contents);
-    } else {
-        console.log("Error: Multiple Files Detected");
-        return;
+function draw(evt){
+    var files = evt.target.files; // FileList object
+
+    // Loop through the FileList and render image files as thumbnails.
+    for (var i = 0, f; f = files[i]; i++) {
+
+        var reader = new FileReader();
+
+        // Closure to capture the file information.
+        reader.onload = (function(theFile) {
+            return function(e) {
+                // Render thumbnail.
+                console.log(atob(e.target.result.split("base64,")[1]))
+                //console.log(reader.readAsBinaryString(e.target.result))
+            };
+        })(f);
+
+        // Read in the image file as a data URL.
+        reader.readAsDataURL(f);
     }
 }
+
+//document.getElementById('files').addEventListener('change', handleFileSelect, false);
