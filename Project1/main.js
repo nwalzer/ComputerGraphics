@@ -84,7 +84,7 @@ function makeDrawing(total){
     let projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
     gl.uniformMatrix4fv(projMatrixLoc, false, flatten(projMatrix));
 
-    for(let i = 0; i < total; i++){
+    for(let i = 0; i < total; i++){ //for each set of vertices
         let pBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray[i]), gl.STATIC_DRAW);
@@ -122,7 +122,7 @@ function drawFile(evt){
     reader.onload = (function(theFile) {
         return function(e) {
             let contents = atob(e.target.result.split("base64,")[1]);
-            contents = contents.slice(contents.lastIndexOf("*")+1);
+            contents = contents.slice(contents.lastIndexOf("*") + 1);
             let temp = contents.split(/\s+/);
             let left = parseFloat(temp[1]);
             let top = parseFloat(temp[2]);
@@ -132,34 +132,71 @@ function drawFile(evt){
             console.log(top);
             console.log(right);
             console.log(bottom);
+            let extentsExist = false;
 
-            projMatrix = ortho(left, right, bottom, top, -1.0, 1.0);
-            if((right-left) / (top-bottom) < 1){
-                gl.viewport(0, 0, (400*(right-left))/(top-bottom), 400);
+            if (left < 1.0) {
+                extentsExist = true
+            } else if (left == 1.0 && top < 1.0) {
+                extentsExist = true
+            }
+
+            if (extentsExist) {
+                projMatrix = ortho(left, right, bottom, top, -1.0, 1.0);
+                if ((right - left) / (top - bottom) < 1) {
+                    gl.viewport(0, 0, (400 * (right - left)) / (top - bottom), 400);
+                } else {
+                    gl.viewport(0, 0, 400, (400 * (top - bottom)) / (right - left));
+                }
             } else {
-                gl.viewport(0, 0, 400, (400*(top-bottom))/(right-left));
+                projMatrix = ortho(-320.0, 320.0, -240.0, 240.0, -1.0, 1.0);
+                //projMatrix = mat4();
+                gl.viewport(0, 0, 640, 480);
             }
 
             pointsArray = [];
             let vertices = [];
             let lines = contents.split("\n");
             let paCounter = 0;
+            if(!extentsExist){
+                paCounter = temp[0];
+            }
             for(let i = 1; i < lines.length; i++){
-                if(lines[i].includes(left) && lines[i].includes(top) && lines[i].includes(right) && lines[i].includes(bottom)){
+                if(extentsExist && lines[i].includes(left) && lines[i].includes(top) && lines[i].includes(right) && lines[i].includes(bottom)){
                     paCounter = parseInt(lines[i+1])
-                    console.log("# lines: " + paCounter);
+                    if(isNaN(paCounter) && parseInt(lines[i+2]) > 0) {
+                        paCounter = parseInt(lines[i + 2]);
+                        i += 1;
+                    }
                     i += 1;
                 } else {
                     vertices = [];
                     let numVerts = parseInt(lines[i]);
+                    if(numVerts === 0 || isNaN(numVerts)){
+                        continue;
+                    }
+
+                    let emptyLines = 0;
                     for(let j = 1; j < numVerts+1; j++){
-                        let thisLine = lines[i+j].split(/\s+/);
-                        vertices.push(vec4(parseFloat(thisLine[1]), parseFloat(thisLine[2]), 0.0, 1.0));
+                        while(isNaN(parseInt(lines[i+j+emptyLines]))){
+                            emptyLines++;
+                        }
+                        let thisLine = lines[i+j+emptyLines].split(/\s+/);
+                        let first;
+                        let second;
+                        if(thisLine[0] === ""){
+                            first = thisLine[1];
+                            second = thisLine[2];
+                        } else {
+                            first = thisLine[0];
+                            second = thisLine[1];
+                        }
+                        vertices.push(vec4(parseFloat(first), parseFloat(second), 0.0, 1.0));
                     }
                     pointsArray.push(vertices);
-                    i += numVerts
+                    i += numVerts + emptyLines
                 }
             }
+            console.log("# lines: " + paCounter);
             makeDrawing(paCounter)
         };
     })(f);
