@@ -1,14 +1,16 @@
 let pointsArray;
 let gl;
 let program;
+let canvas;
+let projMatrix;
 
 function main() {
     // Retrieve <canvas> element
-    let canvas = document.getElementById('webgl');
+    canvas = document.getElementById('webgl');
 
 
     // Get the rendering context for WebGL
-    gl = WebGLUtils.setupWebGL(canvas);
+    gl = WebGLUtils.setupWebGL(canvas, {preserveDrawingBuffer:true});
     if (!gl)
     {
         console.log('Failed to get the rendering context for WebGL');
@@ -24,7 +26,6 @@ function main() {
     gl.useProgram(program);
 
     //Set up the viewport
-    gl.viewport( 0, 0, canvas.width, canvas.height );
 
     /*let points = [];
     points.push(vec4(-0.5, -0.5, 0.0, 1.0));
@@ -67,10 +68,10 @@ function main() {
         let key = event.key;
         switch(key){
             case 'a':
-                makeDrawing()
+                makeDrawing(62)
                 break;
             case 's':
-                makeDrawing()
+                makeDrawing(62)
                 break;
         }
     }
@@ -80,24 +81,10 @@ function main() {
 
 function makeDrawing(total){
     gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    let colors = [];
-    colors.push(vec4(0.0, 0.0, 0.0, 1.0));
+    let projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
+    gl.uniformMatrix4fv(projMatrixLoc, false, flatten(projMatrix));
 
-    let cBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW);
-
-    let vColor = gl.getAttribLocation(program, "vColor");
-    gl.enableVertexAttribArray(vColor);
-    gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
-
-    let vPointSize = gl.getUniformLocation(program, "vPointSize");
-    gl.uniform1f(vPointSize,50.0)
-
-    let i = 0;
-    //TODO: Find out why every call of this overwrites previous data
-    setInterval(function(){
+    for(let i = 0; i < total; i++){
         let pBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray[i]), gl.STATIC_DRAW);
@@ -106,25 +93,21 @@ function makeDrawing(total){
         gl.enableVertexAttribArray(vPosition);
         gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
 
-        gl.drawArrays(gl.LINE_LOOP, 0, pointsArray[i].length);
-        console.log(i);
-        console.log(pointsArray[i]);
-        i++;
-    }, 1000) // */
-    /*let pBuffer = [total]
-    for(let i = 0; i < total; i++){
-        pBuffer[i] = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer[i]);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray[i]), gl.STATIC_DRAW);
+        let colors = [];
+        for(let j = 0; j < pointsArray[i].length; j++){
+            colors.push(vec4(0.0, 0.0, 0.0, 1.0));
+        }
 
-        let vPosition = gl.getAttribLocation(program, "vPosition");
-        gl.enableVertexAttribArray(vPosition);
-        gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+        let cBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW);
 
-        gl.drawArrays(gl.LINE_LOOP, 0, pointsArray[i].length);
+        let vColor = gl.getAttribLocation(program, "vColor");
+        gl.enableVertexAttribArray(vColor);
+        gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+
+        gl.drawArrays(gl.LINE_STRIP, 0, pointsArray[i].length);
         console.log(i);
-        //console.log(pointsArray[i]);
-        //i = 100
     } // */
 }
 
@@ -138,38 +121,42 @@ function drawFile(evt){
     let reader = new FileReader();
     reader.onload = (function(theFile) {
         return function(e) {
-            let contents = atob(e.target.result.split("base64,")[1])
-            contents = contents.slice(contents.lastIndexOf("*")+1)
-            let temp = contents.split(/\s+/)
-            let left = temp[1];
-            let top = temp[2];
-            let right = temp[3];
-            let bottom = temp[4];
-            console.log(left)
-            console.log(top)
-            console.log(right)
-            console.log(bottom)
-            //TODO: Figure out what left, top, right, and bottom do
-            gl.viewport( 0, 0, Math.abs(left-right)*400, Math.abs(top-bottom)*400);
+            let contents = atob(e.target.result.split("base64,")[1]);
+            contents = contents.slice(contents.lastIndexOf("*")+1);
+            let temp = contents.split(/\s+/);
+            let left = parseFloat(temp[1]);
+            let top = parseFloat(temp[2]);
+            let right = parseFloat(temp[3]);
+            let bottom = parseFloat(temp[4]);
+            console.log(left);
+            console.log(top);
+            console.log(right);
+            console.log(bottom);
 
-            pointsArray = []
+            projMatrix = ortho(left, right, bottom, top, -1.0, 1.0);
+            if((right-left) / (top-bottom) < 1){
+                gl.viewport(0, 0, (400*(right-left))/(top-bottom), 400);
+            } else {
+                gl.viewport(0, 0, 400, (400*(top-bottom))/(right-left));
+            }
+
+            pointsArray = [];
             let vertices = [];
             let lines = contents.split("\n");
             let paCounter = 0;
             for(let i = 1; i < lines.length; i++){
                 if(lines[i].includes(left) && lines[i].includes(top) && lines[i].includes(right) && lines[i].includes(bottom)){
                     paCounter = parseInt(lines[i+1])
-                    console.log("# lines: " + parseInt(lines[i+1]));
+                    console.log("# lines: " + paCounter);
                     i += 1;
                 } else {
                     vertices = [];
-                    let numVerts = parseInt(lines[i])
-                    //console.log(numVerts)
+                    let numVerts = parseInt(lines[i]);
                     for(let j = 1; j < numVerts+1; j++){
-                        var thisLine = lines[i+j].split(/\s+/)
+                        let thisLine = lines[i+j].split(/\s+/);
                         vertices.push(vec4(parseFloat(thisLine[1]), parseFloat(thisLine[2]), 0.0, 1.0));
                     }
-                    pointsArray.push(vertices)
+                    pointsArray.push(vertices);
                     i += numVerts
                 }
             }

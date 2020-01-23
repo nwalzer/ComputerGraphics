@@ -130,7 +130,6 @@ function mat3()
 function mat4()
 {
     var v = _argumentsToArray( arguments );
-
     var m = [];
     switch ( v.length ) {
     case 0:
@@ -479,7 +478,6 @@ function ortho( left, right, bottom, top, near, far )
     var w = right - left;
     var h = top - bottom;
     var d = far - near;
-
     var result = mat4();
     result[0][0] = 2.0 / w;
     result[1][1] = 2.0 / h;
