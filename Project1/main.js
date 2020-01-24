@@ -128,19 +128,17 @@ function drawFile(evt){
             let top = parseFloat(temp[2]);
             let right = parseFloat(temp[3]);
             let bottom = parseFloat(temp[4]);
-            console.log(left);
-            console.log(top);
-            console.log(right);
-            console.log(bottom);
+            console.log(left, top, right, bottom);
             let extentsExist = false;
 
             if (left < 1.0) {
                 extentsExist = true
-            } else if (left == 1.0 && top < 1.0) {
+            } else if (left === 1.0 && top < 1.0) {
                 extentsExist = true
             }
 
             if (extentsExist) {
+                console.log("Custom Extents");
                 projMatrix = ortho(left, right, bottom, top, -1.0, 1.0);
                 if ((right - left) / (top - bottom) < 1) {
                     gl.viewport(0, 0, (400 * (right - left)) / (top - bottom), 400);
@@ -148,9 +146,11 @@ function drawFile(evt){
                     gl.viewport(0, 0, 400, (400 * (top - bottom)) / (right - left));
                 }
             } else {
-                projMatrix = ortho(-320.0, 320.0, -240.0, 240.0, -1.0, 1.0);
-                //projMatrix = mat4();
-                gl.viewport(0, 0, 640, 480);
+                left = Number.MAX_VALUE;
+                right = Number.MIN_VALUE;
+                top = Number.MIN_VALUE;
+                bottom = Number.MAX_VALUE;
+                console.log("Default Extents");
             }
 
             pointsArray = [];
@@ -174,6 +174,7 @@ function drawFile(evt){
                     if(numVerts === 0 || isNaN(numVerts)){
                         continue;
                     }
+                    console.log(numVerts)
 
                     let emptyLines = 0;
                     for(let j = 1; j < numVerts+1; j++){
@@ -181,19 +182,44 @@ function drawFile(evt){
                             emptyLines++;
                         }
                         let thisLine = lines[i+j+emptyLines].split(/\s+/);
+                        console.log(thisLine);
                         let first;
                         let second;
                         if(thisLine[0] === ""){
-                            first = thisLine[1];
-                            second = thisLine[2];
+                            first = parseFloat(thisLine[1]);
+                            second = parseFloat(thisLine[2]);
                         } else {
-                            first = thisLine[0];
-                            second = thisLine[1];
+                            first = parseFloat(thisLine[0]);
+                            second = parseFloat(thisLine[1]);
                         }
-                        vertices.push(vec4(parseFloat(first), parseFloat(second), 0.0, 1.0));
+
+                        if(!extentsExist){
+                            if(first < left){
+                                left = first;
+                            } else if(first > right){
+                                right = first;
+                            }
+
+                            if(second < bottom){
+                                bottom = second;
+                            } else if(second > top){
+                                top = second
+                            }
+                        }
+                        vertices.push(vec4(first, second, 0.0, 1.0));
                     }
                     pointsArray.push(vertices);
                     i += numVerts + emptyLines
+                }
+            }
+
+            if(!extentsExist){
+                console.log(left, right, bottom, top);
+                projMatrix = ortho(left, right, bottom, top, -1.0, 1.0);
+                if ((right - left) / (top - bottom) < 1) {
+                    gl.viewport(0, 0, (400 * (right - left)) / (top - bottom), 400);
+                } else {
+                    gl.viewport(0, 0, 400, (400 * (top - bottom)) / (right - left));
                 }
             }
             console.log("# lines: " + paCounter);
