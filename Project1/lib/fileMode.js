@@ -17,7 +17,7 @@ function makeDrawing(){
 
         let colors = [];
         for(let j = 0; j < pointsArray[i].length; j++){ //push enough color vectors for each vertex
-            colors.push(vec4(0.0, 0.0, 0.0, 1.0));
+            colors.push(colorPicker[colorPointer]);
         }
 
         let cBuffer = gl.createBuffer();

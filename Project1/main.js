@@ -1,7 +1,9 @@
-let pointsArray;
+let pointsArray = [];
 let gl;
 let program;
 let canvas;
+let colorPicker = [];
+let colorPointer;
 
 function main() {
     // Retrieve <canvas> element
@@ -21,15 +23,45 @@ function main() {
     // Initialize shaders
     program = initShaders(gl, "vshader", "fshader");
     gl.useProgram(program);
+    colorPointer = 0;
+    colorPicker.push(vec4(0.0, 0.0, 0.0, 1.0));
+    colorPicker.push(vec4(1.0, 0.0, 0.0, 1.0));
+    colorPicker.push(vec4(0.0, 1.0, 0.0, 1.0));
+    colorPicker.push(vec4(0.0, 0.0, 1.0, 1.0));
+
+    window.onclick = function(event){
+        let fmode = document.getElementById("fmode");
+        if(fmode.classList.contains("hidden")){
+            drawPoint(event);
+        }
+    };
 
     window.onkeypress = function(event) {
         let key = event.key;
         switch(key){
-            case 'a':
-                makeDrawing(62)
+            case 'f':
+                let fmode = document.getElementById("fmode");
+                if(fmode.classList.contains("hidden")){
+                   let dmode = document.getElementById("dmode");
+                   dmode.classList.add("hidden");
+                   fmode.classList.remove("hidden");
+                   gl.clear(gl.COLOR_BUFFER_BIT);
+                   pointsArray = [];
+                }
                 break;
-            case 's':
-                makeDrawing(62)
+            case 'd':
+                let dmode = document.getElementById("dmode");
+                if(dmode.classList.contains("hidden")){
+                    let fmode = document.getElementById("fmode");
+                    fmode.classList.add("hidden");
+                    dmode.classList.remove("hidden");
+                    gl.clear(gl.COLOR_BUFFER_BIT);
+                    pointArray = [];
+                }
+                break;
+            case 'c':
+                colorPointer = (colorPointer+1)%3;
+                makeDrawing();
                 break;
         }
     }

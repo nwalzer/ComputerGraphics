@@ -3,6 +3,11 @@
 <head>
     <meta charset="utf-8" />
     <title>Project 1</title>
+    <style>
+        .hidden{
+            opacity: 0.0;
+        }
+    </style>
 
     <script id="vshader" type="x-shader/x-vertex">
 
@@ -30,6 +35,7 @@
     <script src="lib/initShaders.js"></script>
     <script src="lib/MV.js"></script>
     <script src="lib/fileMode.js"></script>
+    <script src="lib/drawMode.js"></script>
 
     <script src="main.js"></script>
 </head>
@@ -43,5 +49,8 @@
 <form id="fileInput">
     <input type="file" id="drawModeFile" name="drawModeFile" accept=".dat"><br><br>
 </form>
+<p id="fmode">You are currently in File Mode. Press 'd' to enter Draw Mode.</p>
+<p id="dmode" class="hidden">You are currently in Draw Mode. Press 'f' to enter File Mode.</p>
+<p>Press 'c' to cycle the line colors.</p>
 </body>
 </html>
