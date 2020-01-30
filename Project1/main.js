@@ -1,3 +1,14 @@
+/* EXTRA FEATURES:
+    Press 'u' to delete the most recent vertex (draw mode only)
+    Draw lines using the color selected from the custom color box
+    Drawing a single point on the screen displays the point
+    Use the arrow keys to translate your file or drawing by 1px per press
+    
+    A more detailed explanation of these features can be found in the
+    Extra Features section of README.txt
+*/
+
+
 let pointsArray = [], colorPicker = [], projMatrix = [];
 let gl;
 let program;
