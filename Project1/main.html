@@ -14,27 +14,26 @@
     </style>
 
     <script id="vshader" type="x-shader/x-vertex">
+        attribute vec4 vPosition;
+        attribute vec4 vColor;
+        varying vec4 fColor;
+        uniform mat4 projMatrix;
+        uniform float vPointSize;
 
-	attribute vec4 vPosition;
-	attribute vec4 vColor;
-	varying vec4 fColor;
-	uniform mat4 projMatrix;
-	uniform float vPointSize;
-
-	void main() {
-	    gl_Position = projMatrix * vPosition;
-	    gl_PointSize = vPointSize;
-	    fColor = vColor;
-  	}
+        void main() {
+            gl_Position = projMatrix * vPosition;
+            gl_PointSize = vPointSize;
+            fColor = vColor;
+        }
 	</script>
 
     <script id="fshader" type="x-shader/x-fragment">
-    precision mediump float;
-	varying vec4 fColor;
+        precision mediump float;
+        varying vec4 fColor;
 
-	void main() {
-	    gl_FragColor = fColor;
-  	}
+        void main() {
+            gl_FragColor = fColor;
+        }
 	</script>
 
     <script src="lib/webgl-utils.js"></script>
@@ -47,24 +46,23 @@
 </head>
 
 <body onload="main()">
+    <canvas id="webgl" width="400" height="400">
+        Please use a browser that supports the "canvas" tag.
+    </canvas>
 
-<canvas id="webgl" width="400" height="400">
-    Please use a browser that supports the "canvas" tag.
-</canvas>
+    <form id="fileInput">
+        <input type="file" id="drawModeFile" name="drawModeFile" accept=".dat"><br><br>
+    </form>
+    <p id="fmode">You are currently in File Mode. Press 'd' to enter Draw Mode.</p>
+    <p id="dmode" class="hidden">You are currently in Draw Mode. Press 'f' to enter File Mode.</p>
+    <p>Press 'c' to cycle the line colors, 'u' to undo the most recent draw (draw mode only), and hold 'b' while clicking to create a new polyline (draw mode only).</p>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 
-<form id="fileInput">
-    <input type="file" id="drawModeFile" name="drawModeFile" accept=".dat"><br><br>
-</form>
-<p id="fmode">You are currently in File Mode. Press 'd' to enter Draw Mode.</p>
-<p id="dmode" class="hidden">You are currently in Draw Mode. Press 'f' to enter File Mode.</p>
-<p>Press 'c' to cycle the line colors, 'u' to undo the most recent draw (draw mode only), and hold 'b' while clicking to create a new polyline (draw mode only).</p>
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-
-<form class="form-inline">
-    <div class="form-group">
-        <label>Custom Color: </label>
-        <input type="color" id="custcolor" value="#ff0000">
-    </div>
-</form>
+    <form class="form-inline">
+        <div class="form-group">
+            <label>Custom Color: </label>
+            <input type="color" id="custcolor" value="#ff0000">
+        </div>
+    </form>
 </body>
 </html>

@@ -56,7 +56,9 @@ Extra Features:
         'c'. Note, however, that I have it set up so that only the most recently
         chosen custom color will be in the cycle. If you choose multiple custom
         colors, only one will be added in. The custom color picker applies for both
-        draw mode and file mode.
+        draw mode and file mode. Also note that the color picker is on an 'onchange'
+        event handler, which means that opening the picker and choosing the same
+        color that is already selected will show no change to the screen.
     Point Size:
         When the user draws a polyline which contains only one vertex, the vertex is
         drawn as a point on the screen. If the user continues holding 'b' and making
