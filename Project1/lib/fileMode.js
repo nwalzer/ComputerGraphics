@@ -1,39 +1,5 @@
-let projMatrix; //projection matrix
-
-//Draw all of the contents of the pointsArray
-function makeDrawing(){
-    gl.clear(gl.COLOR_BUFFER_BIT); //clear screen
-    let projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
-    gl.uniformMatrix4fv(projMatrixLoc, false, flatten(projMatrix)); //load in projection matrix
-
-    for(let i = 0; i < pointsArray.length; i++){ //for each line drawing in pointsArray
-        let pBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray[i]), gl.STATIC_DRAW); //create VBO
-
-        let vPosition = gl.getAttribLocation(program, "vPosition");
-        gl.enableVertexAttribArray(vPosition);
-        gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0); //enable attribute
-
-        let colors = [];
-        for(let j = 0; j < pointsArray[i].length; j++){ //push enough color vectors for each vertex
-            colors.push(colorPicker[colorPointer]);
-        }
-
-        let cBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW); //create color buffer
-
-        let vColor = gl.getAttribLocation(program, "vColor");
-        gl.enableVertexAttribArray(vColor);
-        gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0); //enable coloring
-
-        gl.drawArrays(gl.LINE_STRIP, 0, pointsArray[i].length); //draw one line
-    }
-}
-
 //loads file contents into appropriate spaces (ortho, viewport, pointsArray, projMatrix, etc).
-function drawFile(evt){
+function parseFile(evt){
     let files = evt.target.files; // FileList object
     if(files.length === 0){
         return;
@@ -63,7 +29,6 @@ function drawFile(evt){
             let top = parseFloat(temp[j+1]);
             let right = parseFloat(temp[j+2]);
             let bottom = parseFloat(temp[j+3]); //get the first 4 numbers that appear
-            console.log(left, top, right, bottom);
             let extentsExist = false;
 
             let lines = contents.split("\n"); //split contents along lines
@@ -75,7 +40,7 @@ function drawFile(evt){
             if(lines[i].includes(left.toString()) && lines[i].includes(top.toString()) && lines[i].includes(right.toString()) && lines[i].includes(bottom.toString())){
                 extentsExist = true;
                 i++; //move to next line
-                console.log("EXIST");
+                console.log("Custom Extents");
                 while(lines[i] === ""){ //iterate through blank lines
                     i++
                 }
@@ -142,14 +107,13 @@ function drawFile(evt){
 
             }
 
-            console.log(left, right, bottom, top);
             projMatrix = ortho(left, right, bottom, top, -1.0, 1.0);
             if ((right - left) / (top - bottom) < 1) { //if h > w
                 gl.viewport(0, 0, (400 * (right - left)) / (top - bottom), 400);
             } else { //if w > h
                 gl.viewport(0, 0, 400, (400 * (top - bottom)) / (right - left));
             }
-            console.log("# lines: " + paCounter);
+
             //once we've compiled all of the vertex information, draw everything
             makeDrawing()
         };
