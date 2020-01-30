@@ -63,3 +63,8 @@ Extra Features:
         When the user draws a polyline which contains only one vertex, the vertex is
         drawn as a point on the screen. If the user continues holding 'b' and making
         multiple clicks, multiple points will be drawn.
+    Translation:
+        When the user presses the arrow keys, whatever drawing is on the screen is
+        translated 1px in the pressed direction. This applies to both file mode and
+        draw mode. Because of the shear number of vertices in the files, holding down
+        an arrow key, or pressing one rapidly, lags a bit.
