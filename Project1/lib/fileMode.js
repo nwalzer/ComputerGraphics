@@ -63,7 +63,6 @@ function parseFile(evt){
                 while(i < lines.length && lines[i] === ""){ //continue past blank lines
                     i++
                 }
-                console.log(lines[i]);
                 let numVerts = parseInt(lines[i]); //get number of vertices
 
                 let emptyLines = 0;
@@ -72,7 +71,6 @@ function parseFile(evt){
                         emptyLines++;
                     }
                     let thisLine = lines[i+j+emptyLines].split(/\s+/); //split this line along spaces
-                    console.log(thisLine);
                     let first;
                     let second;
                     if(thisLine[0] === ""){ //sometimes first element is a space, if so then take next two elements
