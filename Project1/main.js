@@ -1,10 +1,8 @@
-let pointsArray = [];
+let pointsArray = [], colorPicker = [], projMatrix = [];
 let gl;
 let program;
 let canvas;
-let colorPicker = [];
 let colorPointer = 0;
-let projMatrix = [];
 
 function main() {
     // Retrieve <canvas> element
@@ -107,6 +105,19 @@ function main() {
                         makeDrawing(); //redraw
                     }
                 }
+                break;
+            case 'ArrowRight':
+                translateDraw(1, 0); //translate one pixel to the right
+                break;
+            case 'ArrowLeft':
+                translateDraw(-1, 0); //translate one pixel to the left
+                break;
+            case 'ArrowUp':
+                translateDraw(0, 1); //translate one pixel up
+                break;
+            case 'ArrowDown':
+                translateDraw(0, -1); //translate one pixel down
+                break;
         }
     };
 
@@ -121,6 +132,26 @@ function main() {
     };
 
 
+}
+
+//Translates the drawing on the screen
+function translateDraw(){
+    let x = parseFloat(arguments[0]);
+    let y = parseFloat(arguments[1]);
+    let fmode = document.getElementById("fmode");
+    if(fmode.classList.contains("hidden")) { //if we are in draw mode
+        for (let i = 0; i < pointsArray.length; i++) { //for each polyline
+            for (let j = 0; j < pointsArray[i].length; j++) { //for each vertex
+                pointsArray[i][j][0] += x; //add to x coordinate
+                pointsArray[i][j][1] += y; //add to y coordinate
+            }
+        }
+    } else { //if in file mode
+        let currentVP = gl.getParameter(gl.VIEWPORT);
+        gl.viewport(currentVP[0]+x, currentVP[1]+y, currentVP[2], currentVP[3]); //shift the viewport instead of the vertices
+        //shifting the viewport prevents premature clipping from non-canvas-sized viewports
+    }
+    makeDrawing();
 }
 
 //Takes in a string representing a color value in hex and converts it to rgb in the range of [0.0, 1.0]

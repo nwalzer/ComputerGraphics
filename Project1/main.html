@@ -13,6 +13,8 @@
             }
         </style>
 
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
         <script id="vshader" type="x-shader/x-vertex">
             attribute vec4 vPosition;
             attribute vec4 vColor;
@@ -43,6 +45,7 @@
         <script src="lib/drawMode.js"></script>
 
         <script src="main.js"></script>
+
     </head>
 
     <body onload="main()">
@@ -56,7 +59,7 @@
         <p id="fmode">You are currently in File Mode. Press 'd' to enter Draw Mode.</p>
         <p id="dmode" class="hidden">You are currently in Draw Mode. Press 'f' to enter File Mode.</p>
         <p>Press 'c' to cycle the line colors, 'u' to undo the most recent draw (draw mode only), and hold 'b' while clicking to create a new polyline (draw mode only).</p>
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <p>Use the arrow keys to translate the drawing.</p>
 
         <form class="form-inline">
             <div class="form-group">

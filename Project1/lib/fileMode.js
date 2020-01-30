@@ -113,7 +113,7 @@ function parseFile(evt){
             }
 
             //once we've compiled all of the vertex information, draw everything
-            makeDrawing()
+            makeDrawing();
         };
     })(f);
     reader.readAsDataURL(f)
