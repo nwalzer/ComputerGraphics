@@ -1,9 +1,9 @@
 /* EXTRA FEATURES:
-    Press 'u' to delete the most recent vertex (draw mode only)
-    Draw lines using the color selected from the custom color box
-    Drawing a single point on the screen displays the point
-    Use the arrow keys to translate your file or drawing by 1px per press
-    
+    - Press 'u' to delete the most recent vertex (draw mode only)
+    - Draw lines using the color selected from the custom color box
+    - Drawing a single point on the screen displays the point
+    - Use the arrow keys to translate your file or drawing by 1px per press
+
     A more detailed explanation of these features can be found in the
     Extra Features section of README.txt
 */
@@ -181,7 +181,7 @@ function makeDrawing(){
     let projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
     gl.uniformMatrix4fv(projMatrixLoc, false, flatten(projMatrix)); //load in projection matrix
 
-    for(let i = 0; i < pointsArray.length; i++){ //for each line drawing in pointsArray
+    for(let i = 0; i < pointsArray.length; i++){ //for each polyline in pointsArray
         let pBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray[i]), gl.STATIC_DRAW); //create VBO

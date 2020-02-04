@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Project 1</title>
+        <style>
+            .hidden{
+                opacity: 0.0;
+            }
+
+            canvas{
+                border: 1px solid black;
+            }
+        </style>
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+        <script id="vshader" type="x-shader/x-vertex">
+            attribute vec4 vPosition;
+            attribute vec4 vColor;
+            varying vec4 fColor;
+            uniform mat4 projMatrix;
+            uniform float vPointSize;
+
+            void main() {
+                gl_Position = projMatrix * vPosition;
+                gl_PointSize = vPointSize;
+                fColor = vColor;
+            }
+        </script>
+
+        <script id="fshader" type="x-shader/x-fragment">
+            precision mediump float;
+            varying vec4 fColor;
+
+            void main() {
+                gl_FragColor = fColor;
+            }
+        </script>
+
+        <script src="lib/webgl-utils.js"></script>
+        <script src="lib/initShaders.js"></script>
+        <script src="lib/MV.js"></script>
+        <script src="lib/fileMode.js"></script>
+        <script src="lib/drawMode.js"></script>
+
+        <script src="main.js"></script>
+
+    </head>
+
+    <body onload="main()">
+        <canvas id="webgl" width="400" height="400">
+            Please use a browser that supports the "canvas" tag.
+        </canvas>
+
+        <form id="fileInput">
+            <input type="file" id="drawModeFile" name="drawModeFile" accept=".ply"><br><br>
+        </form>
+        <p>Press 'c' to cycle the line colors, 'u' to undo the most recent draw (draw mode only), and hold 'b' while clicking to create a new polyline (draw mode only).</p>
+        <p>Use the arrow keys to translate the drawing.</p>
+
+    </body>
+</html>
