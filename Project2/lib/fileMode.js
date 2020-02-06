@@ -6,13 +6,19 @@ function parseFile(evt){
     }
     let f = files[0];
 
+    pointsArray = [];
+    faceArray = [];
     let reader = new FileReader();
     reader.onload = (function(theFile) { //this is the only way I could figure out how to read files
         return function(e) {
             let contents = atob(e.target.result.split("base64,")[1]);
             contents = contents.split(/\n/);
-            if(contents[0] !== "ply"){
-                console.log("No Ply");
+            console.log(contents[0]);
+            if(contents[0].replace(/\s+/, "") === ""){
+                contents.shift();
+            }
+            if(contents[0].replace(/\s+/, "") !== "ply"){
+                console.log("No Ply: " + contents[0]);
                 return;
             }
 
@@ -49,26 +55,29 @@ function parseFile(evt){
                 if(points[0] === ""){
                     points.shift();
                 }
+                let x = parseFloat(points[0]);
+                let y = parseFloat(points[1]);
+                let z = parseFloat(points[2]);
 
-                if(points[0] < left){
-                    left = points[0];
+                if(x < left){
+                    left = x;
                 }
-                if(points[0] > right){
-                    right = points[0];
+                if(x > right){
+                    right = x;
                 }
-                if(points[1] < bottom){
-                    bottom = points[1];
+                if(y < bottom){
+                    bottom = y;
                 }
-                if(points[1] > top){
-                    top = points[1];
+                if(y > top){
+                    top = y;
                 }
-                if(points[2] < minZ){
-                    minZ = points[2];
+                if(z < minZ){
+                    minZ = z;
                 }
-                if(points[2] > maxZ){
-                    maxZ = points[2];
+                if(z > maxZ){
+                    maxZ = z;
                 }
-                pointsArray.push(vec3(points[0], points[1], points[2]));
+                pointsArray.push(vec4(x, y, z, 1.0));
                 i++;
             }
             console.log(left, right, top, bottom, minZ, maxZ);
@@ -91,7 +100,34 @@ function parseFile(evt){
                 i++;
             }
 
-            projMatrix = perspective(30, ((right-left)/(top-bottom)), 0, (maxZ - minZ));
+            projMatrix = perspective(30.0, ((right-left)/(top-bottom)), 0.1, 100+(maxZ-minZ));
+
+            let offsetZ;
+            if((right-left) > (top-bottom)){
+                offsetZ = (right-left)/2;
+            } else {
+                offsetZ = (top-bottom)/2;
+            }
+
+            offsetZ = offsetZ/Math.tan(30);
+            console.log(offsetZ);
+            //var eye = vec3(0, 0, minZ-offsetZ);
+            //var eye = vec3(0, 0, minZ - ((right-left)/(top-bottom))*(right-left));
+            var eye = vec3(right-((right-left)/2), top-((top-bottom)/2), 6*offsetZ);
+            var at = vec3(right-((right-left)/2), top-((top-bottom)/2), maxZ);
+            var up = vec3(0.0, 1.0, 0.0);
+
+            var viewMatrix = lookAt(eye, at, up);
+
+            var viewMatrixLoc = gl.getUniformLocation(program, 'viewMatrix');
+            gl.uniformMatrix4fv(viewMatrixLoc, false, flatten(viewMatrix));
+
+            if ((right - left) / (top - bottom) < 1) { //if h > w
+                gl.viewport(0, 0, (400 * (right - left)) / (top - bottom), 400);
+            } else { //if w > h
+                gl.viewport(0, 0, 400, (400 * (top - bottom)) / (right - left));
+            } // */
+            //gl.viewport(0, 0, 400, 400);
 
             //once we've compiled all of the vertex information, draw everything
             makeDrawing();

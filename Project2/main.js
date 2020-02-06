@@ -24,6 +24,7 @@ function main() {
         console.log('Failed to get the rendering context for WebGL');
         return;
     }
+    gl.enable(gl.DEPTH_TEST);
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -63,6 +64,7 @@ function main() {
                 break;
         }
     };
+    //gl.viewport(0, 0, canvas.width, canvas.height);
 }
 
 //Translates the drawing on the screen
@@ -89,17 +91,17 @@ function makeDrawing(){
     let projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
     gl.uniformMatrix4fv(projMatrixLoc, false, flatten(projMatrix)); //load in projection matrix
 
-    for(let i = 0; i < pointsArray.length; i++){ //for each polyline in pointsArray
+    for(let i = 0; i < faceArray.length; i++){ //for each polyline in pointsArray
         let pBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray[i]), gl.STATIC_DRAW); //create VBO
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(faceArray[i]), gl.STATIC_DRAW); //create VBO
 
         let vPosition = gl.getAttribLocation(program, "vPosition");
         gl.enableVertexAttribArray(vPosition);
         gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0); //enable attribute
 
         let colors = [];
-        for(let j = 0; j < pointsArray[i].length; j++){ //push enough color vectors for each vertex
+        for(let j = 0; j < faceArray[i].length; j++){ //push enough color vectors for each vertex
             colors.push(vec4(1.0, 1.0, 1.0, 1.0));
         }
 
@@ -111,6 +113,7 @@ function makeDrawing(){
         gl.enableVertexAttribArray(vColor);
         gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0); //enable coloring
 
-        gl.drawArrays(gl.LINE_STRIP, 0, pointsArray[i].length); //draw one line
+        console.log(faceArray[i]);
+        gl.drawArrays(gl.LINE_LOOP, 0, faceArray[i].length); //draw one line
     }
 }

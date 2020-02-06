@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="utf-8" />
-        <title>Project 1</title>
+        <title>Project 2</title>
         <style>
             .hidden{
                 opacity: 0.0;
@@ -20,10 +20,11 @@
             attribute vec4 vColor;
             varying vec4 fColor;
             uniform mat4 projMatrix;
+            uniform mat4 viewMatrix;
             uniform float vPointSize;
 
             void main() {
-                gl_Position = projMatrix * vPosition;
+                gl_Position = projMatrix * viewMatrix * vPosition;
                 gl_PointSize = vPointSize;
                 fColor = vColor;
             }
