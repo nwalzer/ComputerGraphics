@@ -101,18 +101,15 @@ function parseFile(evt){
             }
 
             let offsetZ;
-            let theta;
+            let theta = 60;
             if((right-left) > (top-bottom)){
-                offsetZ = (right-left);
+                offsetZ = ((right-left)/2)/Math.tan(radians((1/2)*theta));
             } else {
-                offsetZ = (top-bottom);
+                offsetZ = ((top-bottom)/2)/Math.tan(radians((1/2)*theta));
             }
 
-            //offsetZ = offsetZ/Math.tan(30);
             console.log(offsetZ);
-            //var eye = vec3(0, 0, minZ-offsetZ);
-            //var eye = vec3(0, 0, minZ - ((right-left)/(top-bottom))*(right-left));
-            projMatrix = perspective(90.0, ((right-left)/(top-bottom)), 0.1, 50+offsetZ+(maxZ-minZ));
+            projMatrix = perspective(theta, ((right-left)/(top-bottom)), 0.1, 50+offsetZ+(maxZ-minZ));
             var eye = vec3(right-((right-left)/2), top-((top-bottom)/2), maxZ+offsetZ);
             var at = vec3(right-((right-left)/2), top-((top-bottom)/2), maxZ);
             var up = vec3(0.0, 1.0, 0.0);

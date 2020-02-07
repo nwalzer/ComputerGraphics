@@ -113,7 +113,6 @@ function makeDrawing(){
         gl.enableVertexAttribArray(vColor);
         gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0); //enable coloring
 
-        console.log(faceArray[i]);
         gl.drawArrays(gl.LINE_LOOP, 0, faceArray[i].length); //draw one line
     }
 }
