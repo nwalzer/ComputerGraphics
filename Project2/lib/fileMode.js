@@ -100,20 +100,20 @@ function parseFile(evt){
                 i++;
             }
 
-            projMatrix = perspective(30.0, ((right-left)/(top-bottom)), 0.1, 100+(maxZ-minZ));
-
             let offsetZ;
+            let theta;
             if((right-left) > (top-bottom)){
-                offsetZ = (right-left)/2;
+                offsetZ = (right-left);
             } else {
-                offsetZ = (top-bottom)/2;
+                offsetZ = (top-bottom);
             }
 
-            offsetZ = offsetZ/Math.tan(30);
+            //offsetZ = offsetZ/Math.tan(30);
             console.log(offsetZ);
             //var eye = vec3(0, 0, minZ-offsetZ);
             //var eye = vec3(0, 0, minZ - ((right-left)/(top-bottom))*(right-left));
-            var eye = vec3(right-((right-left)/2), top-((top-bottom)/2), 6*offsetZ);
+            projMatrix = perspective(90.0, ((right-left)/(top-bottom)), 0.1, 50+offsetZ+(maxZ-minZ));
+            var eye = vec3(right-((right-left)/2), top-((top-bottom)/2), maxZ+offsetZ);
             var at = vec3(right-((right-left)/2), top-((top-bottom)/2), maxZ);
             var up = vec3(0.0, 1.0, 0.0);
 
