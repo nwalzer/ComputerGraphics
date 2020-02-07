@@ -100,17 +100,19 @@ function parseFile(evt){
                 i++;
             }
 
-            let offsetZ;
-            let theta = 60;
-            if((right-left) > (top-bottom)){
-                offsetZ = ((right-left)/2)/Math.tan(radians((1/2)*theta));
-            } else {
-                offsetZ = ((top-bottom)/2)/Math.tan(radians((1/2)*theta));
-            }
+            let offsetZ = 10;
+            let theta = (Math.atan(((top-bottom)/2)/offsetZ) * (180/Math.PI))*2;
 
-            console.log(offsetZ);
+            console.log("RADIANS: " + Math.atan(((top-bottom)/2)/offsetZ) + " -- " + radians(theta/2));
+            console.log("COMPARE --- Expected: " + Math.tan(radians(theta/2)) + " -- Actual: " + ((top-bottom)/2)/offsetZ);
+            console.log("THETA: " + theta);
+            /*if(theta > 90){
+                theta -= 20;
+            }// */
+
             projMatrix = perspective(theta, ((right-left)/(top-bottom)), 0.1, 50+offsetZ+(maxZ-minZ));
-            var eye = vec3(right-((right-left)/2), top-((top-bottom)/2), maxZ+offsetZ);
+
+            var eye = vec3(right-((right-left)/2), top-((top-bottom)/2), maxZ+offsetZ+1);
             var at = vec3(right-((right-left)/2), top-((top-bottom)/2), maxZ);
             var up = vec3(0.0, 1.0, 0.0);
 
@@ -124,7 +126,6 @@ function parseFile(evt){
             } else { //if w > h
                 gl.viewport(0, 0, 400, (400 * (top - bottom)) / (right - left));
             } // */
-            //gl.viewport(0, 0, 400, 400);
 
             //once we've compiled all of the vertex information, draw everything
             makeDrawing();
