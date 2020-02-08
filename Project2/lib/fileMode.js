@@ -81,6 +81,7 @@ function parseFile(evt){
                 i++;
             }
             console.log(left, right, top, bottom, minZ, maxZ);
+            normalArray = [];
             for(j = 0; j < numFaces; j++){
                 if(contents[i] === ""){
                     i++;
@@ -90,12 +91,27 @@ function parseFile(evt){
                     verts.shift();
                 }
                 let vertLen = parseInt(verts[0]);
+                verts.shift();
                 let thisFace = [];
-                let k = 0;
+                let nx = 0, ny = 0, nz = 0, xavg = 0, yavg = 0, zavg = 0;
 
-                for(k = 0; k < vertLen; k++){
-                    thisFace.push(pointsArray[verts[k+1]]);
+                for(let k = 0; k < vertLen; k++){
+                    thisFace.push(pointsArray[verts[k]]);
+                    xavg += pointsArray[verts[k]][0];
+                    yavg += pointsArray[verts[k]][1];
+                    zavg += pointsArray[verts[k]][2];
+                    nx += (pointsArray[verts[k]][1] - pointsArray[verts[(k+1)%vertLen]][1])*(pointsArray[verts[k]][2] + pointsArray[verts[(k+1)%vertLen]][2]);
+                    ny += (pointsArray[verts[k]][2] - pointsArray[verts[(k+1)%vertLen]][2])*(pointsArray[verts[k]][0] + pointsArray[verts[(k+1)%vertLen]][0]);
+                    nz += (pointsArray[verts[k]][0] - pointsArray[verts[(k+1)%vertLen]][0])*(pointsArray[verts[k]][1] + pointsArray[verts[(k+1)%vertLen]][1]);
                 }
+                xavg /= vertLen;
+                yavg /= vertLen;
+                zavg /= vertLen;
+                /*let nlength = Math.sqrt(Math.pow(nx, 2) + Math.pow(ny, 2) + Math.pow(nz, 2));
+                nx /= nlength;
+                ny /= nlength;
+                nz /= nlength; // */
+                normalArray.push([vec4(xavg, yavg, zavg, 1.0), vec4(nx+xavg, ny+yavg, nz+zavg, 1.0)]);
                 faceArray.push(thisFace);
                 i++;
             }
@@ -111,9 +127,6 @@ function parseFile(evt){
             console.log("COMPARE --- Expected: " + Math.tan(radians(theta/2)) + " -- Actual: " + ((top-bottom)/2)/offsetZ);
             console.log("THETA: " + theta);
             console.log("ASPECT: " + aspect);
-            /*if(theta > 90){
-                theta -= 20;
-            }// */
 
             projMatrix = perspective(theta, aspect, 0.1, 50+offsetZ+(maxZ-minZ));
 

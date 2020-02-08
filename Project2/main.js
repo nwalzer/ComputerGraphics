@@ -9,7 +9,7 @@
 */
 
 
-let pointsArray = [], faceArray = [], projMatrix = [];
+let pointsArray = [], faceArray = [], projMatrix = [], normalArray = [];
 let gl;
 let program;
 let canvas;
@@ -62,6 +62,8 @@ function main() {
             case 'ArrowDown':
                 translateDraw(0, -1); //translate one pixel down
                 break;
+            case 'n':
+                drawNormals();
         }
     };
     //gl.viewport(0, 0, canvas.width, canvas.height);
@@ -83,6 +85,34 @@ function hex2vec4(hval){
     let g = ((dval & 0x00FF00) >> 8)/255; //get g byte
     let b = (dval & 0x0000FF)/255; //get b byte
     colorPicker.push(vec4(r, g, b, 1.0)); //turn into vec4 and push to color cycler
+}
+
+function drawNormals(){
+    for(let i = 0; i < normalArray.length; i++){ //for each normal in normalArray
+        let pBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(normalArray[i]), gl.STATIC_DRAW); //create VBO
+
+        let vPosition = gl.getAttribLocation(program, "vPosition");
+        gl.enableVertexAttribArray(vPosition);
+        gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0); //enable attribute
+
+        let colors = [];
+        for(let j = 0; j < normalArray[i].length; j++){ //push enough color vectors for each vertex
+            colors.push(vec4(1.0, 0.0, 0.0, 1.0));
+        }
+
+        let cBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW); //create color buffer
+
+        let vColor = gl.getAttribLocation(program, "vColor");
+        gl.enableVertexAttribArray(vColor);
+        gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0); //enable coloring
+
+        gl.drawArrays(gl.LINE_STRIP, 0, normalArray[i].length); //draw one line
+        console.log(normalArray[i])
+    }
 }
 
 //draws the current contents of the polyline array
