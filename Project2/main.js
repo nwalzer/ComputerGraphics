@@ -13,8 +13,9 @@ let pointsArray = [], faceArray = [], projMatrix = [], modelMatrix = [], normalA
 let gl;
 let program;
 let canvas;
-let currentY = 0, currentZ = 0, pulseDist = 0, breathingIn = false, moveX = false;
-let pulseOn = false;
+let currentZ = 0, pulseDist = 0, theta = 0;
+let breathingIn = false, moveX = false, pulseOn = false, rotateOn = false;
+let eye, at;
 
 function main() {
     // Retrieve <canvas> element
@@ -50,7 +51,11 @@ function main() {
                 pulseOn = !pulseOn;
                 pulse();
                 break;
-            case 'u':
+            case 'z':
+                zoom(1);
+                break;
+            case 'a':
+                zoom(-1);
                 break;
             case 'x':
                 moveX = !moveX;
@@ -65,12 +70,39 @@ function main() {
             case 'u':
                 translateDraw(0, -1); //translate one pixel down
                 break;
+            case 'r':
+                rotateOn = !rotateOn;
+                rotateDrawing();
+                break;
             case 'n':
                 drawNormals();
                 break;
         }
     };
     //gl.viewport(0, 0, canvas.width, canvas.height);
+}
+
+function rotateDrawing(){
+    if(!rotateOn){
+        return;
+    }
+    theta -= 0.5;
+    console.log(theta, currentZ);
+    //let firstTransMatrix = translate(0, 0, currentZ);
+    let rotMatrix = rotate(theta, vec3(1, 0, 0));
+    //let secondTransMatrix = translate(0, 0, -currentZ);
+    //modelMatrix = mult(secondTransMatrix, mult(rotMatrix, firstTransMatrix));
+    modelMatrix = rotMatrix;
+
+    makeDrawing();
+    id = requestAnimationFrame(rotateDrawing);
+}
+
+function zoom(){
+    let z = arguments[0];
+    currentZ += z;
+    eye[2] += z;
+    makeDrawing();
 }
 
 //Translates the drawing on the screen
@@ -129,12 +161,18 @@ function drawNormals(){
 
 //draws the current contents of the polyline array
 function makeDrawing(){
-    /*let ctMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
-    gl.uniformMatrix4fv(ctMatrixLoc, false, flatten(modelMatrix));// */
+    let up = vec3(0.0, 1.0, 0.0);
+    let viewMatrix = lookAt(eye, at, up);
+
+    let viewMatrixLoc = gl.getUniformLocation(program, 'viewMatrix');
+    gl.uniformMatrix4fv(viewMatrixLoc, false, flatten(viewMatrix));
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); //clear screen
     let projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
     gl.uniformMatrix4fv(projMatrixLoc, false, flatten(projMatrix)); //load in projection matrix
+
+    let MMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
+    gl.uniformMatrix4fv(MMatrixLoc, false, flatten(modelMatrix));
 
     for(let i = 0; i < faceArray.length; i++){ //for each polyline in pointsArray
         let pBuffer = gl.createBuffer();
@@ -188,11 +226,6 @@ function pulse() {
     } else {
         pulseDist += 0.01;
     }
-    console.log(pulseDist);
-    //let ctMatrix = translate(0, 0, 0);
-
-    //let ctMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
-    //gl.uniformMatrix4fv(ctMatrixLoc, false, flatten(ctMatrix));
 
     makeDrawing();
 
