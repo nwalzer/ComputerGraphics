@@ -21,10 +21,13 @@
             varying vec4 fColor;
             uniform mat4 projMatrix;
             uniform mat4 viewMatrix;
+            //uniform mat4 modelMatrix;
+            attribute vec4 nTranslate;
             uniform float vPointSize;
 
             void main() {
-                gl_Position = projMatrix * viewMatrix * vPosition;
+                vec4 newPos = vec4(vPosition[0] + nTranslate[0], vPosition[1] + nTranslate[1], vPosition[2] + nTranslate[2], 1.0);
+                gl_Position = projMatrix * viewMatrix * newPos;
                 gl_PointSize = vPointSize;
                 fColor = vColor;
             }

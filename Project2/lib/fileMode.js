@@ -149,5 +149,7 @@ function parseFile(evt){
             makeDrawing();
         };
     })(f);
-    reader.readAsDataURL(f)
+    reader.readAsDataURL(f);
+    breathingIn = false;
+    pulseDist = 0;
 }

@@ -9,10 +9,12 @@
 */
 
 
-let pointsArray = [], faceArray = [], projMatrix = [], normalArray = [];
+let pointsArray = [], faceArray = [], projMatrix = [], modelMatrix = [], normalArray = [];
 let gl;
 let program;
 let canvas;
+let currentY = 0, currentZ = 0, pulseDist = 0, breathingIn = false;
+let pulseOn = false;
 
 function main() {
     // Retrieve <canvas> element
@@ -38,7 +40,8 @@ function main() {
 
     var vPointSize = gl.getUniformLocation(program, "vPointSize");
     gl.uniform1f(vPointSize, 5.0);
-
+    modelMatrix = mat4();
+    projMatrix = mat4();
 
     window.onkeydown = function(event) {
         let key = event.key;
@@ -47,6 +50,8 @@ function main() {
                 makeDrawing(); //redraw using current color
                 break;
             case 'b':
+                pulseOn = !pulseOn;
+                pulse();
                 break;
             case 'u':
                 break;
@@ -64,6 +69,7 @@ function main() {
                 break;
             case 'n':
                 drawNormals();
+                break;
         }
     };
     //gl.viewport(0, 0, canvas.width, canvas.height);
@@ -111,12 +117,14 @@ function drawNormals(){
         gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0); //enable coloring
 
         gl.drawArrays(gl.LINE_STRIP, 0, normalArray[i].length); //draw one line
-        console.log(normalArray[i])
     }
 }
 
 //draws the current contents of the polyline array
 function makeDrawing(){
+    /*let ctMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
+    gl.uniformMatrix4fv(ctMatrixLoc, false, flatten(modelMatrix));// */
+
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); //clear screen
     let projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
     gl.uniformMatrix4fv(projMatrixLoc, false, flatten(projMatrix)); //load in projection matrix
@@ -131,7 +139,10 @@ function makeDrawing(){
         gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0); //enable attribute
 
         let colors = [];
-        for(let j = 0; j < faceArray[i].length; j++){ //push enough color vectors for each vertex
+        let mVec = vec4(normalArray[i][1][0]*pulseDist, normalArray[i][1][1]*pulseDist, normalArray[i][1][2]*pulseDist, 1);
+        let pulseArray = [];
+        for(let j = 0; j < faceArray[i].length; j++){ //push enough color vectors for each
+            pulseArray.push(mVec);
             colors.push(vec4(1.0, 1.0, 1.0, 1.0));
         }
 
@@ -143,6 +154,41 @@ function makeDrawing(){
         gl.enableVertexAttribArray(vColor);
         gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0); //enable coloring
 
+        let mBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, mBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(pulseArray), gl.STATIC_DRAW); //create VBO
+
+        let mPosition = gl.getAttribLocation(program, "nTranslate");
+        gl.enableVertexAttribArray(mPosition);
+        gl.vertexAttribPointer(mPosition, 4, gl.FLOAT, false, 0, 0); //enable attribute
+
         gl.drawArrays(gl.LINE_LOOP, 0, faceArray[i].length); //draw one line
     }
+}
+
+
+function pulse() {
+    if(!pulseOn){
+        return;
+    } else if (pulseDist - 1 > 0){
+        breathingIn = true;
+    } else if (pulseDist < 0){
+        breathingIn = false;
+    }
+
+    if(breathingIn){
+        pulseDist -= 0.01;
+    } else {
+        pulseDist += 0.01;
+    }
+    console.log(pulseDist);
+    //let ctMatrix = translate(0, 0, 0);
+
+    //let ctMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
+    //gl.uniformMatrix4fv(ctMatrixLoc, false, flatten(ctMatrix));
+
+    makeDrawing();
+
+    id = requestAnimationFrame(pulse);
+
 }
