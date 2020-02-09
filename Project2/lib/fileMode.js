@@ -138,7 +138,8 @@ function parseFile(evt){
             } else { //if w > h
                 gl.viewport(0, 0, 400, (400 * (top - bottom)) / (right - left));
             } // */
-
+            across = right-left;
+            tall = top-bottom;
             //once we've compiled all of the vertex information, draw everything
             makeDrawing();
         };
@@ -147,6 +148,8 @@ function parseFile(evt){
     breathingIn = false;
     pulseDist = 0;
     currentZ = 0;
+    currentY = 0;
+    currentX = 0;
     theta = 0;
     moveX = false;
     pulseOn = false;

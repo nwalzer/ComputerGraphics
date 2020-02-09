@@ -13,7 +13,7 @@ let pointsArray = [], faceArray = [], projMatrix = [], modelMatrix = [], normalA
 let gl;
 let program;
 let canvas;
-let currentZ = 0, pulseDist = 0, theta = 0;
+let currentZ = 0, currentX = 0, currentY = 0, pulseDist = 0, theta = 0, across = 0, tall = 0;
 let breathingIn = false, moveX = false, pulseOn = false, rotateOn = false, drawNorms = false;
 let eye, at;
 
@@ -89,11 +89,8 @@ function rotateDrawing(){
     }
     theta -= 0.5;
     console.log(theta, currentZ);
-    //let firstTransMatrix = translate(0, 0, currentZ);
-    let rotMatrix = rotate(theta, vec3(1, 0, 0));
-    //let secondTransMatrix = translate(0, 0, -currentZ);
-    //modelMatrix = mult(secondTransMatrix, mult(rotMatrix, firstTransMatrix));
-    modelMatrix = rotMatrix;
+    //let firstTransMatrix = translate(0, 0, -currentZ);
+    let rotMatrix = rotate(-0.5, vec3(1, 0, 0));
 
     makeDrawing();
     id = requestAnimationFrame(rotateDrawing);
@@ -102,7 +99,6 @@ function rotateDrawing(){
 function zoom(){
     let z = arguments[0];
     currentZ += z;
-    eye[2] += z;
     makeDrawing();
 }
 
@@ -114,9 +110,11 @@ function translateDraw(){
         x = parseFloat(arguments[0]);
         y = parseFloat(arguments[1]);
     }
+    currentX += x;
+    currentY += y;
 
-    let currentVP = gl.getParameter(gl.VIEWPORT);
-    gl.viewport(currentVP[0]+x, currentVP[1]+y, currentVP[2], currentVP[3]); //shift the viewport instead of the vertices
+    //let currentVP = gl.getParameter(gl.VIEWPORT);
+    //gl.viewport(currentX, currentY, currentVP[2], currentVP[3]); //shift the viewport instead of the vertices
     makeDrawing();
     if(moveX){
         id = requestAnimationFrame(translateDraw)
@@ -182,6 +180,7 @@ function makeDrawing(){
     let projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
     gl.uniformMatrix4fv(projMatrixLoc, false, flatten(projMatrix)); //load in projection matrix
 
+    modelMatrix = mult(translate(across*0.01*currentX, tall*0.01*currentY, currentZ), rotate(theta, vec3(1, 0, 0)));
     let MMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
     gl.uniformMatrix4fv(MMatrixLoc, false, flatten(modelMatrix));
 
