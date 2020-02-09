@@ -14,7 +14,7 @@ let gl;
 let program;
 let canvas;
 let currentZ = 0, pulseDist = 0, theta = 0;
-let breathingIn = false, moveX = false, pulseOn = false, rotateOn = false;
+let breathingIn = false, moveX = false, pulseOn = false, rotateOn = false, drawNorms = false;
 let eye, at;
 
 function main() {
@@ -75,7 +75,8 @@ function main() {
                 rotateDrawing();
                 break;
             case 'n':
-                drawNormals();
+                drawNorms = !drawNorms;
+                makeDrawing();
                 break;
         }
     };
@@ -143,8 +144,10 @@ function drawNormals(){
         gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0); //enable attribute
 
         let colors = [];
-        for(let j = 0; j < normalArray[i].length; j++){ //push enough color vectors for each vertex
-            colors.push(vec4(1.0, 0.0, 0.0, 1.0));
+        let pulseArray = [];
+        for(let j = 0; j < faceArray[i].length; j++){ //push enough color vectors for each
+            pulseArray.push(vec4(0, 0, 0, 1.0));
+            colors.push(vec4(1.0, 1.0, 1.0, 1.0));
         }
 
         let cBuffer = gl.createBuffer();
@@ -154,6 +157,14 @@ function drawNormals(){
         let vColor = gl.getAttribLocation(program, "vColor");
         gl.enableVertexAttribArray(vColor);
         gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0); //enable coloring
+
+        let mBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, mBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(pulseArray), gl.STATIC_DRAW); //create VBO
+
+        let mPosition = gl.getAttribLocation(program, "nTranslate");
+        gl.enableVertexAttribArray(mPosition);
+        gl.vertexAttribPointer(mPosition, 4, gl.FLOAT, false, 0, 0); //enable attribute
 
         gl.drawArrays(gl.LINE_STRIP, 0, normalArray[i].length); //draw one line
     }
@@ -208,6 +219,9 @@ function makeDrawing(){
         gl.vertexAttribPointer(mPosition, 4, gl.FLOAT, false, 0, 0); //enable attribute
 
         gl.drawArrays(gl.LINE_LOOP, 0, faceArray[i].length); //draw one line
+    }
+    if(drawNorms){
+        drawNormals();
     }
 }
 

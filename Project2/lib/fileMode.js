@@ -146,4 +146,10 @@ function parseFile(evt){
     reader.readAsDataURL(f);
     breathingIn = false;
     pulseDist = 0;
+    currentZ = 0;
+    theta = 0;
+    moveX = false;
+    pulseOn = false;
+    rotateOn = false;
+    drawNorms = false;
 }
