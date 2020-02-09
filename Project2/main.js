@@ -13,7 +13,7 @@ let pointsArray = [], faceArray = [], projMatrix = [], modelMatrix = [], normalA
 let gl;
 let program;
 let canvas;
-let currentY = 0, currentZ = 0, pulseDist = 0, breathingIn = false;
+let currentY = 0, currentZ = 0, pulseDist = 0, breathingIn = false, moveX = false;
 let pulseOn = false;
 
 function main() {
@@ -46,25 +46,23 @@ function main() {
     window.onkeydown = function(event) {
         let key = event.key;
         switch(key){
-            case 'c':
-                makeDrawing(); //redraw using current color
-                break;
             case 'b':
                 pulseOn = !pulseOn;
                 pulse();
                 break;
             case 'u':
                 break;
-            case 'ArrowRight':
+            case 'x':
+                moveX = !moveX;
                 translateDraw(1, 0); //translate one pixel to the right
                 break;
-            case 'ArrowLeft':
+            case 'c':
                 translateDraw(-1, 0); //translate one pixel to the left
                 break;
-            case 'ArrowUp':
+            case 'y':
                 translateDraw(0, 1); //translate one pixel up
                 break;
-            case 'ArrowDown':
+            case 'u':
                 translateDraw(0, -1); //translate one pixel down
                 break;
             case 'n':
@@ -77,10 +75,19 @@ function main() {
 
 //Translates the drawing on the screen
 function translateDraw(){
-    let x = parseFloat(arguments[0]);
-    let y = parseFloat(arguments[1]);
+    let x = 1;
+    let y = 0;
+    if(arguments.length === 2){
+        x = parseFloat(arguments[0]);
+        y = parseFloat(arguments[1]);
+    }
 
+    let currentVP = gl.getParameter(gl.VIEWPORT);
+    gl.viewport(currentVP[0]+x, currentVP[1]+y, currentVP[2], currentVP[3]); //shift the viewport instead of the vertices
     makeDrawing();
+    if(moveX){
+        id = requestAnimationFrame(translateDraw)
+    }
 }
 
 //Takes in a string representing a color value in hex and converts it to rgb in the range of [0.0, 1.0]
