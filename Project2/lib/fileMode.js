@@ -107,7 +107,7 @@ function parseFile(evt){
                 xavg /= vertLen;
                 yavg /= vertLen;
                 zavg /= vertLen;
-                /*let nlength = Math.sqrt(Math.pow(nx, 2) + Math.pow(ny, 2) + Math.pow(nz, 2));
+                let nlength = Math.sqrt(Math.pow(nx, 2) + Math.pow(ny, 2) + Math.pow(nz, 2));
                 nx /= nlength;
                 ny /= nlength;
                 nz /= nlength; // */
@@ -123,12 +123,7 @@ function parseFile(evt){
             }
             let theta = (Math.atan(((top-bottom)/2)/offsetZ) * (180/Math.PI))*2;
 
-            console.log("RADIANS: " + Math.atan(((top-bottom)/2)/offsetZ) + " -- " + radians(theta/2));
-            console.log("COMPARE --- Expected: " + Math.tan(radians(theta/2)) + " -- Actual: " + ((top-bottom)/2)/offsetZ);
-            console.log("THETA: " + theta);
-            console.log("ASPECT: " + aspect);
-
-            projMatrix = perspective(theta, aspect, 0.1, 50+offsetZ+(maxZ-minZ));
+            projMatrix = perspective(theta, aspect, 0.1, 1000+offsetZ+(maxZ-minZ));
 
             let eye = vec3(right-((right-left)/2), top-((top-bottom)/2), maxZ+offsetZ+5);
             let at = vec3(right-((right-left)/2), top-((top-bottom)/2), maxZ);

@@ -86,7 +86,7 @@ function main() {
             case 'n':
                 drawNorms = !drawNorms;
                 if(!rotateOn && !pulseOn && !moveX){ //if we don't have an animation frame going, manually draw normals
-                    drawNormals();
+                    makeDrawing();
                 }
                 break;
         }
@@ -152,7 +152,7 @@ function drawNormals(){
     for(let i = 0; i < normalArray.length; i++){ //for each normal in normalArray
         let pBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(normalArray[i]), gl.DYNAMIC_DRAW); //create VBO
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(normalArray[i]), gl.STREAM_DRAW); //create VBO
 
         let vPosition = gl.getAttribLocation(program, "vPosition");
         gl.enableVertexAttribArray(vPosition);
@@ -165,7 +165,7 @@ function drawNormals(){
 
         let cBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.DYNAMIC_DRAW); //create color buffer
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STREAM_DRAW); //create color buffer
 
         let vColor = gl.getAttribLocation(program, "vColor");
         gl.enableVertexAttribArray(vColor);
@@ -199,7 +199,7 @@ function makeDrawing(){
         }
         let pBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(toDraw), gl.DYNAMIC_DRAW); //create VBO
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(toDraw), gl.STREAM_DRAW); //create VBO
 
         let vPosition = gl.getAttribLocation(program, "vPosition");
         gl.enableVertexAttribArray(vPosition);
@@ -207,7 +207,7 @@ function makeDrawing(){
 
         let cBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.DYNAMIC_DRAW); //create color buffer
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STREAM_DRAW); //create color buffer
 
         let vColor = gl.getAttribLocation(program, "vColor");
         gl.enableVertexAttribArray(vColor);
