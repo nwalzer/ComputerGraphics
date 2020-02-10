@@ -15,7 +15,6 @@ let program;
 let canvas;
 let currentZ = 0, currentX = 0, currentY = 0, pulseDist = 0, theta = 0, across = 0, tall = 0;
 let breathingIn = false, moveX = false, pulseOn = false, rotateOn = false, drawNorms = false;
-let eye, at;
 
 function main() {
     // Retrieve <canvas> element
@@ -45,21 +44,29 @@ function main() {
     projMatrix = mat4();
 
     window.onkeydown = function(event) {
+        let el = document.getElementById("drawModeFile");
+        if(el.value === ""){
+            return;
+        }
         let key = event.key;
         switch(key){
             case 'b':
                 pulseOn = !pulseOn;
-                pulse();
+                if(pulseOn && !moveX && !rotateOn){ //if alter drawing is not already on, turn it on
+                    alterDrawing();
+                }
                 break;
             case 'z':
-                zoom(1);
+                zoom(1); //translate drawing 1 unit in +z direction
                 break;
             case 'a':
-                zoom(-1);
+                zoom(-1); //translate drawing 1 unit in -z direction
                 break;
             case 'x':
                 moveX = !moveX;
-                translateDraw(1, 0); //translate one pixel to the right
+                if(moveX && !pulseOn && !rotateOn){ //if alter drawing is not already on, turn it on
+                    alterDrawing();
+                }
                 break;
             case 'c':
                 translateDraw(-1, 0); //translate one pixel to the left
@@ -72,52 +79,61 @@ function main() {
                 break;
             case 'r':
                 rotateOn = !rotateOn;
-                rotateDrawing();
+                if(rotateOn && !pulseOn && !moveX){ //if alter drawing is not already on, turn it on
+                    alterDrawing();
+                }
                 break;
             case 'n':
                 drawNorms = !drawNorms;
-                makeDrawing();
+                if(!rotateOn && !pulseOn && !moveX){ //if we don't have an animation frame going, manually draw normals
+                    makeDrawing();
+                }
                 break;
         }
     };
-    //gl.viewport(0, 0, canvas.width, canvas.height);
 }
 
-function rotateDrawing(){
-    if(!rotateOn){
-        return;
+//Handles rotation, pulse, and translate animations. Designed so that there is always at most one animation frame running
+function alterDrawing(){
+    if(rotateOn){ //if we want to rotate
+        theta -= 0.5; //decrement theta
     }
-    theta -= 0.5;
-    console.log(theta, currentZ);
-    //let firstTransMatrix = translate(0, 0, -currentZ);
-    let rotMatrix = rotate(-0.5, vec3(1, 0, 0));
+    if(pulseOn){ //if we want to pulse
+        if (pulseDist - 1 >= 0){ //if distance along normal > 100%
+            breathingIn = true; //switch to breathing in
+        } else if (pulseDist <= 0){ //if we are back to starting positions
+            breathingIn = false; //switch to breathing out
+        }
 
-    makeDrawing();
-    id = requestAnimationFrame(rotateDrawing);
+        if(breathingIn){ //if breathing in
+            pulseDist -= 0.01; //decrement distance along normal vector
+        } else { //if breathing out
+            pulseDist += 0.01; //increment distance along normal vector
+        }
+    }
+    if(moveX){ //if we want to translate in the +x direction
+        currentX += 1; //increment current x position
+    }
+    if(moveX || pulseOn || rotateOn){ //if any of the animations are on
+        makeDrawing(); //make the drawing
+        id = requestAnimationFrame(alterDrawing); //loop the function
+    }
 }
 
+//handles zooming
 function zoom(){
-    let z = arguments[0];
-    currentZ += z;
-    makeDrawing();
+    currentZ += arguments[0]; //increment currentZ position by given amount
+    if(!moveX && !pulseOn && !rotateOn){ //if no animations are running, manually draw
+        makeDrawing();
+    }
 }
 
-//Translates the drawing on the screen
+//Translates the drawing on the screen in x and y directions
 function translateDraw(){
-    let x = 1;
-    let y = 0;
-    if(arguments.length === 2){
-        x = parseFloat(arguments[0]);
-        y = parseFloat(arguments[1]);
-    }
-    currentX += x;
-    currentY += y;
-
-    //let currentVP = gl.getParameter(gl.VIEWPORT);
-    //gl.viewport(currentX, currentY, currentVP[2], currentVP[3]); //shift the viewport instead of the vertices
-    makeDrawing();
-    if(moveX){
-        id = requestAnimationFrame(translateDraw)
+    currentX += parseFloat(arguments[0]); //increment x position by first argument
+    currentY += parseFloat(arguments[1]); //increment y position by second argument
+    if(!moveX && !pulseOn && !rotateOn){ //if no animations are running, manually draw
+        makeDrawing();
     }
 }
 
@@ -131,6 +147,7 @@ function hex2vec4(hval){
     colorPicker.push(vec4(r, g, b, 1.0)); //turn into vec4 and push to color cycler
 }
 
+//virtually the exact same code as make drawings, except this will draw the normal array rather than the face array
 function drawNormals(){
     for(let i = 0; i < normalArray.length; i++){ //for each normal in normalArray
         let pBuffer = gl.createBuffer();
@@ -143,9 +160,9 @@ function drawNormals(){
 
         let colors = [];
         let pulseArray = [];
-        for(let j = 0; j < faceArray[i].length; j++){ //push enough color vectors for each
-            pulseArray.push(vec4(0, 0, 0, 1.0));
-            colors.push(vec4(1.0, 1.0, 1.0, 1.0));
+        for(let j = 0; j < normalArray[i].length; j++){ //push enough color vectors for each
+            pulseArray.push(vec4(0, 0, 0, 1.0)); //Prevents the normal vectors from translating when pulse is on
+            colors.push(vec4(1.0, 0.0, 0.0, 1.0)); //default normal color is red
         }
 
         let cBuffer = gl.createBuffer();
@@ -156,7 +173,7 @@ function drawNormals(){
         gl.enableVertexAttribArray(vColor);
         gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0); //enable coloring
 
-        let mBuffer = gl.createBuffer();
+        let mBuffer = gl.createBuffer(); //push the pulse array to the attribute nTranslate
         gl.bindBuffer(gl.ARRAY_BUFFER, mBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(pulseArray), gl.STATIC_DRAW); //create VBO
 
@@ -168,21 +185,17 @@ function drawNormals(){
     }
 }
 
-//draws the current contents of the polyline array
+//draws the current contents of the face array
 function makeDrawing(){
-    let up = vec3(0.0, 1.0, 0.0);
-    let viewMatrix = lookAt(eye, at, up);
-
-    let viewMatrixLoc = gl.getUniformLocation(program, 'viewMatrix');
-    gl.uniformMatrix4fv(viewMatrixLoc, false, flatten(viewMatrix));
-
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); //clear screen
+
     let projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
     gl.uniformMatrix4fv(projMatrixLoc, false, flatten(projMatrix)); //load in projection matrix
 
+    //create model matrix from current relevant information
     modelMatrix = mult(translate(across*0.01*currentX, tall*0.01*currentY, currentZ), rotate(theta, vec3(1, 0, 0)));
     let MMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
-    gl.uniformMatrix4fv(MMatrixLoc, false, flatten(modelMatrix));
+    gl.uniformMatrix4fv(MMatrixLoc, false, flatten(modelMatrix)); //load in model matrix
 
     for(let i = 0; i < faceArray.length; i++){ //for each polyline in pointsArray
         let pBuffer = gl.createBuffer();
@@ -219,29 +232,8 @@ function makeDrawing(){
 
         gl.drawArrays(gl.LINE_LOOP, 0, faceArray[i].length); //draw one line
     }
-    if(drawNorms){
+
+    if(drawNorms){ //if we want to draw normals
         drawNormals();
     }
-}
-
-
-function pulse() {
-    if(!pulseOn){
-        return;
-    } else if (pulseDist - 1 > 0){
-        breathingIn = true;
-    } else if (pulseDist < 0){
-        breathingIn = false;
-    }
-
-    if(breathingIn){
-        pulseDist -= 0.01;
-    } else {
-        pulseDist += 0.01;
-    }
-
-    makeDrawing();
-
-    id = requestAnimationFrame(pulse);
-
 }

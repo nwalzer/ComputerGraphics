@@ -130,8 +130,13 @@ function parseFile(evt){
 
             projMatrix = perspective(theta, aspect, 0.1, 50+offsetZ+(maxZ-minZ));
 
-            eye = vec3(right-((right-left)/2), top-((top-bottom)/2), maxZ+offsetZ+5);
-            at = vec3(right-((right-left)/2), top-((top-bottom)/2), maxZ);
+            let eye = vec3(right-((right-left)/2), top-((top-bottom)/2), maxZ+offsetZ+5);
+            let at = vec3(right-((right-left)/2), top-((top-bottom)/2), maxZ);
+            let up = vec3(0.0, 1.0, 0.0);
+            let viewMatrix = lookAt(eye, at, up);
+
+            let viewMatrixLoc = gl.getUniformLocation(program, 'viewMatrix');
+            gl.uniformMatrix4fv(viewMatrixLoc, false, flatten(viewMatrix)); //load in view matrix
 
             if ((right - left) / (top - bottom) < 1) { //if h > w
                 gl.viewport(0, 0, (400 * (right - left)) / (top - bottom), 400);
