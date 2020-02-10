@@ -18,7 +18,6 @@
         <script id="vshader" type="x-shader/x-vertex">
             attribute vec4 vPosition;
             attribute vec4 vColor;
-            attribute vec4 nTranslate;
             varying vec4 fColor;
             uniform mat4 projMatrix;
             uniform mat4 viewMatrix;
@@ -26,8 +25,7 @@
             uniform float vPointSize;
 
             void main() {
-                vec4 newPos = vec4(vPosition[0] + nTranslate[0], vPosition[1] + nTranslate[1], vPosition[2] + nTranslate[2], 1.0);
-                gl_Position = projMatrix * viewMatrix * modelMatrix * newPos;
+                gl_Position = projMatrix * viewMatrix * modelMatrix * vPosition;
                 gl_PointSize = vPointSize;
                 fColor = vColor;
             }

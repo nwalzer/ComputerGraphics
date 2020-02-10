@@ -86,7 +86,7 @@ function main() {
             case 'n':
                 drawNorms = !drawNorms;
                 if(!rotateOn && !pulseOn && !moveX){ //if we don't have an animation frame going, manually draw normals
-                    makeDrawing();
+                    drawNormals();
                 }
                 break;
         }
@@ -152,34 +152,24 @@ function drawNormals(){
     for(let i = 0; i < normalArray.length; i++){ //for each normal in normalArray
         let pBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(normalArray[i]), gl.STATIC_DRAW); //create VBO
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(normalArray[i]), gl.DYNAMIC_DRAW); //create VBO
 
         let vPosition = gl.getAttribLocation(program, "vPosition");
         gl.enableVertexAttribArray(vPosition);
         gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0); //enable attribute
 
         let colors = [];
-        let pulseArray = [];
         for(let j = 0; j < normalArray[i].length; j++){ //push enough color vectors for each
-            pulseArray.push(vec4(0, 0, 0, 1.0)); //Prevents the normal vectors from translating when pulse is on
             colors.push(vec4(1.0, 0.0, 0.0, 1.0)); //default normal color is red
         }
 
         let cBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW); //create color buffer
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.DYNAMIC_DRAW); //create color buffer
 
         let vColor = gl.getAttribLocation(program, "vColor");
         gl.enableVertexAttribArray(vColor);
         gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0); //enable coloring
-
-        let mBuffer = gl.createBuffer(); //push the pulse array to the attribute nTranslate
-        gl.bindBuffer(gl.ARRAY_BUFFER, mBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(pulseArray), gl.STATIC_DRAW); //create VBO
-
-        let mPosition = gl.getAttribLocation(program, "nTranslate");
-        gl.enableVertexAttribArray(mPosition);
-        gl.vertexAttribPointer(mPosition, 4, gl.FLOAT, false, 0, 0); //enable attribute
 
         gl.drawArrays(gl.LINE_STRIP, 0, normalArray[i].length); //draw one line
     }
@@ -198,39 +188,32 @@ function makeDrawing(){
     gl.uniformMatrix4fv(MMatrixLoc, false, flatten(modelMatrix)); //load in model matrix
 
     for(let i = 0; i < faceArray.length; i++){ //for each polyline in pointsArray
+
+        let colors = [];
+        let mVec = vec4(normalArray[i][1][0]*pulseDist, normalArray[i][1][1]*pulseDist, normalArray[i][1][2]*pulseDist, 1);
+        let toDraw = [];
+        for(let j = 0; j < faceArray[i].length; j++){ //push enough color vectors for each
+            toDraw.push(vec4(faceArray[i][j][0]+mVec[0], faceArray[i][j][1]+mVec[1], faceArray[i][j][2]+mVec[2], 1.0));
+            //pulseArray.push(mVec);
+            colors.push(vec4(1.0, 1.0, 1.0, 1.0));
+        }
         let pBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(faceArray[i]), gl.STATIC_DRAW); //create VBO
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(toDraw), gl.DYNAMIC_DRAW); //create VBO
 
         let vPosition = gl.getAttribLocation(program, "vPosition");
         gl.enableVertexAttribArray(vPosition);
         gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0); //enable attribute
 
-        let colors = [];
-        let mVec = vec4(normalArray[i][1][0]*pulseDist, normalArray[i][1][1]*pulseDist, normalArray[i][1][2]*pulseDist, 1);
-        let pulseArray = [];
-        for(let j = 0; j < faceArray[i].length; j++){ //push enough color vectors for each
-            pulseArray.push(mVec);
-            colors.push(vec4(1.0, 1.0, 1.0, 1.0));
-        }
-
         let cBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW); //create color buffer
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.DYNAMIC_DRAW); //create color buffer
 
         let vColor = gl.getAttribLocation(program, "vColor");
         gl.enableVertexAttribArray(vColor);
         gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0); //enable coloring
 
-        let mBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, mBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(pulseArray), gl.STATIC_DRAW); //create VBO
-
-        let mPosition = gl.getAttribLocation(program, "nTranslate");
-        gl.enableVertexAttribArray(mPosition);
-        gl.vertexAttribPointer(mPosition, 4, gl.FLOAT, false, 0, 0); //enable attribute
-
-        gl.drawArrays(gl.LINE_LOOP, 0, faceArray[i].length); //draw one line
+        gl.drawArrays(gl.LINE_LOOP, 0, toDraw.length);
     }
 
     if(drawNorms){ //if we want to draw normals
