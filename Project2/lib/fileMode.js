@@ -108,9 +108,9 @@ function parseFile(evt){
                 yavg /= vertLen;
                 zavg /= vertLen;
                 let nlength = Math.sqrt(Math.pow(nx, 2) + Math.pow(ny, 2) + Math.pow(nz, 2));
-                nx /= nlength;
-                ny /= nlength;
-                nz /= nlength; // */
+                nx /= nlength/(right-left);
+                ny /= nlength/(right-left);
+                nz /= nlength/(right-left); // */
                 normalArray.push([vec4(xavg, yavg, zavg, 1.0), vec4(nx+xavg, ny+yavg, nz+zavg, 1.0)]);
                 faceArray.push(thisFace);
                 i++;

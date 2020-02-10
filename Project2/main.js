@@ -99,7 +99,7 @@ function alterDrawing(){
         theta -= 0.5; //decrement theta
     }
     if(pulseOn){ //if we want to pulse
-        if (pulseDist - 1 >= 0){ //if distance along normal > 100%
+        if (pulseDist - 0.5 >= 0){ //if distance along normal > 100%
             breathingIn = true; //switch to breathing in
         } else if (pulseDist <= 0){ //if we are back to starting positions
             breathingIn = false; //switch to breathing out
@@ -190,7 +190,9 @@ function makeDrawing(){
     for(let i = 0; i < faceArray.length; i++){ //for each polyline in pointsArray
 
         let colors = [];
-        let mVec = vec4(normalArray[i][1][0]*pulseDist, normalArray[i][1][1]*pulseDist, normalArray[i][1][2]*pulseDist, 1);
+        let rawNormal = [normalArray[i][1][0]-normalArray[i][0][0], normalArray[i][1][1]-normalArray[i][0][1], normalArray[i][1][2]-normalArray[i][0][2]];
+        //let mVec = vec4(normalArray[i][1][0]*pulseDist, normalArray[i][1][1]*pulseDist, normalArray[i][1][2]*pulseDist, 1);
+        let mVec = vec4(rawNormal[0]*pulseDist, rawNormal[1]*pulseDist, rawNormal[2]*pulseDist, 1);
         let toDraw = [];
         for(let j = 0; j < faceArray[i].length; j++){ //push enough color vectors for each
             toDraw.push(vec4(faceArray[i][j][0]+mVec[0], faceArray[i][j][1]+mVec[1], faceArray[i][j][2]+mVec[2], 1.0));
