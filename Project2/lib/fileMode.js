@@ -153,14 +153,5 @@ function parseFile(evt){
         };
     })(f);
     reader.readAsDataURL(f);
-    breathingIn = false;
-    pulseDist = 0;
-    currentZ = 0;
-    currentY = 0;
-    currentX = 0;
-    theta = 0;
-    moveX = false;
-    pulseOn = false;
-    rotateOn = false;
-    drawNorms = false;
+    reset();
 }

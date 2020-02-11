@@ -10,11 +10,10 @@
 
 
 let pointsArray = [], faceArray = [], projMatrix = [], modelMatrix = [], normalArray = [];
-let gl;
-let program;
-let canvas;
+let gl, program, canvas;
 let currentZ = 0, currentX = 0, currentY = 0, pulseDist = 0, theta = 0, across = 0, tall = 0, deep = 0;
 let breathingIn = false, moveX = false, pulseOn = false, rotateOn = false, drawNorms = false;
+let mcolor, ncolor;
 
 function main() {
     // Retrieve <canvas> element
@@ -91,6 +90,26 @@ function main() {
                 break;
         }
     };
+
+    mcolor = vec4(1.0, 1.0, 1.0, 1.0);
+    ncolor = vec4(1.0, 0.0, 0.0, 0.0);
+
+    let meshcolor = document.getElementById("meshcolor");
+    meshcolor.onchange = function(event){ //store and display user's choice of color
+        hex2vec4(meshcolor.value.toString(), true); //convert hex value to RGB, store in color cycler
+        makeDrawing(); //redraw using new color
+    };
+    let normcolor = document.getElementById("normcolor");
+    normcolor.onchange = function(event){ //store and display user's choice of color
+        hex2vec4(normcolor.value.toString(), false); //convert hex value to RGB, store in color cycler
+        makeDrawing(); //redraw using new color
+    };
+
+    let rstbtn = document.getElementById("rstbtn");
+    rstbtn.onclick = function(event){
+        reset();
+        makeDrawing();
+    }
 }
 
 //Handles rotation, pulse, and translate animations. Designed so that there is always at most one animation frame running
@@ -138,13 +157,17 @@ function translateDraw(){
 }
 
 //Takes in a string representing a color value in hex and converts it to rgb in the range of [0.0, 1.0]
-function hex2vec4(hval){
+function hex2vec4(hval, isMesh){
     hval = hval.replace("#", ""); //get rid of #
     dval = parseInt(hval, 16); //get color in decimal
     let r = ((dval & 0xFF0000) >> 16)/255; //get r byte
     let g = ((dval & 0x00FF00) >> 8)/255; //get g byte
     let b = (dval & 0x0000FF)/255; //get b byte
-    colorPicker.push(vec4(r, g, b, 1.0)); //turn into vec4 and push to color cycler
+    if(isMesh){
+        mcolor = vec4(r, g, b, 1.0)
+    } else {
+        ncolor = vec4(r, g, b, 1.0)
+    }
 }
 
 //virtually the exact same code as make drawings, except this will draw the normal array rather than the face array
@@ -160,7 +183,7 @@ function drawNormals(){
 
         let colors = [];
         for(let j = 0; j < normalArray[i].length; j++){ //push enough color vectors for each
-            colors.push(vec4(1.0, 0.0, 0.0, 1.0)); //default normal color is red
+            colors.push(ncolor); //default normal color is red
         }
 
         let cBuffer = gl.createBuffer();
@@ -197,7 +220,7 @@ function makeDrawing(){
         for(let j = 0; j < faceArray[i].length; j++){ //push enough color vectors for each
             toDraw.push(vec4(faceArray[i][j][0]+mVec[0], faceArray[i][j][1]+mVec[1], faceArray[i][j][2]+mVec[2], 1.0));
             //pulseArray.push(mVec);
-            colors.push(vec4(1.0, 1.0, 1.0, 1.0));
+            colors.push(mcolor);
         }
         let pBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
@@ -221,4 +244,17 @@ function makeDrawing(){
     if(drawNorms){ //if we want to draw normals
         drawNormals();
     }
+}
+
+function reset(){
+    breathingIn = false;
+    pulseDist = 0;
+    currentZ = 0;
+    currentY = 0;
+    currentX = 0;
+    theta = 0;
+    moveX = false;
+    pulseOn = false;
+    rotateOn = false;
+    drawNorms = false;
 }

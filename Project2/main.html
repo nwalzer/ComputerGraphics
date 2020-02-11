@@ -44,7 +44,6 @@
         <script src="lib/initShaders.js"></script>
         <script src="lib/MV.js"></script>
         <script src="lib/fileMode.js"></script>
-        <script src="lib/drawMode.js"></script>
 
         <script src="main.js"></script>
 
@@ -57,9 +56,18 @@
 
         <form id="fileInput">
             <input type="file" id="drawModeFile" name="drawModeFile" accept=".ply"><br><br>
+            <button type="button" id="rstbtn">Reset Drawing</button>
         </form>
-        <p>Press 'c' to cycle the line colors, 'u' to undo the most recent draw (draw mode only), and hold 'b' while clicking to create a new polyline (draw mode only).</p>
-        <p>Use the arrow keys to translate the drawing.</p>
-
+        <p>Press A to zoom out, Z to zoom in, Y to translate the drawing upwards, U to translate the drawing downwards</p>
+        <p>X to toggle translating to the right, C to translate to the left, R to toggle x-axis rotation, B to toggle pulsing, N to toggle displaying the normal vectors</p>
+        <p>Select from the mesh color picker to change the color of the mesh. Select from the normal color picker to change the color of the surface normals</p>
+        <form class="form-inline">
+            <div class="form-group">
+                <label>Mesh Color: </label>
+                <input type="color" id="meshcolor" value="#FFFFFF">
+                <label>Normal Color: </label>
+                <input type="color" id="normcolor" value="#FF0000">
+            </div>
+        </form>
     </body>
 </html>
