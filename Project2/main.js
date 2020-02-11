@@ -92,7 +92,7 @@ function main() {
     };
 
     mcolor = vec4(1.0, 1.0, 1.0, 1.0);
-    ncolor = vec4(1.0, 0.0, 0.0, 0.0);
+    ncolor = vec4(1.0, 0.0, 0.0, 1.0);
 
     let meshcolor = document.getElementById("meshcolor");
     meshcolor.onchange = function(event){ //store and display user's choice of color
@@ -118,16 +118,16 @@ function alterDrawing(){
         theta -= 0.5; //decrement theta
     }
     if(pulseOn){ //if we want to pulse
-        if (pulseDist - 0.5 >= 0){ //if distance along normal > 100%
+        if (pulseDist - 5 >= 0){ //if distance along normal > 100%
             breathingIn = true; //switch to breathing in
         } else if (pulseDist <= 0){ //if we are back to starting positions
             breathingIn = false; //switch to breathing out
         }
 
         if(breathingIn){ //if breathing in
-            pulseDist -= 0.01; //decrement distance along normal vector
+            pulseDist -= 0.1; //decrement distance along normal vector
         } else { //if breathing out
-            pulseDist += 0.01; //increment distance along normal vector
+            pulseDist += 0.1; //increment distance along normal vector
         }
     }
     if(moveX){ //if we want to translate in the +x direction
@@ -172,6 +172,7 @@ function hex2vec4(hval, isMesh){
 
 //virtually the exact same code as make drawings, except this will draw the normal array rather than the face array
 function drawNormals(){
+    console.log(ncolor);
     for(let i = 0; i < normalArray.length; i++){ //for each normal in normalArray
         let pBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);

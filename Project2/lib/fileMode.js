@@ -109,13 +109,13 @@ function parseFile(evt){
                 zavg /= vertLen;
                 let nlength = Math.sqrt(Math.pow(nx, 2) + Math.pow(ny, 2) + Math.pow(nz, 2));
                 if((right-left) > (top-bottom)){
-                    nx /= nlength/(top-bottom);
-                    ny /= nlength/(top-bottom);
-                    nz /= nlength/(top-bottom);
+                    nx /= nlength/(0.1*(top-bottom));
+                    ny /= nlength/(0.1*(top-bottom));
+                    nz /= nlength/(0.1*(top-bottom));
                 } else {
-                    nx /= nlength/(right-left);
-                    ny /= nlength/(right-left);
-                    nz /= nlength/(right-left);
+                    nx /= nlength/(0.1*(right-left));
+                    ny /= nlength/(0.1*(right-left));
+                    nz /= nlength/(0.1*(right-left));
                 } // */
 
                 normalArray.push([vec4(xavg, yavg, zavg, 1.0), vec4(nx+xavg, ny+yavg, nz+zavg, 1.0)]);
