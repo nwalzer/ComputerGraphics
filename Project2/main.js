@@ -183,7 +183,7 @@ function makeDrawing(){
     gl.uniformMatrix4fv(projMatrixLoc, false, flatten(projMatrix)); //load in projection matrix
 
     //create model matrix from current relevant information
-    modelMatrix = mult(translate(across*0.01*currentX, tall*0.01*currentY, deep*0.01*currentZ), rotate(theta, vec3(1, 0, 0)));
+    modelMatrix = mult(translate(across*0.01*currentX, tall*0.01*currentY, deep*0.5*currentZ), rotate(theta, vec3(1, 0, 0)));
     let MMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
     gl.uniformMatrix4fv(MMatrixLoc, false, flatten(modelMatrix)); //load in model matrix
 
