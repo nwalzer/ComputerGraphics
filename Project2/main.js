@@ -172,7 +172,6 @@ function hex2vec4(hval, isMesh){
 
 //virtually the exact same code as make drawings, except this will draw the normal array rather than the face array
 function drawNormals(){
-    console.log(ncolor);
     for(let i = 0; i < normalArray.length; i++){ //for each normal in normalArray
         let pBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
