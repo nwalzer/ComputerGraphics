@@ -11,8 +11,8 @@
 
 let pointsArray = [], faceArray = [], projMatrix = [], modelMatrix = [], normalArray = [];
 let gl, program, canvas;
-let currentZ = 0, currentX = 0, currentY = 0, pulseDist = 0, theta = 0, across = 0, tall = 0, deep = 0;
-let breathingIn = false, moveX = false, pulseOn = false, rotateOn = false, drawNorms = false;
+let currentZ = 0, currentX = 0, currentY = 0, pulseDist = 0, theta = 0, across = 0, tall = 0, deep = 0, tX = 0, tY = 0, tZ = 0;
+let breathingIn = false, translating = false, pulseOn = false, rotateOn = false, drawNorms = false, zoomOn = false;
 let mcolor, ncolor;
 
 function main() {
@@ -51,40 +51,65 @@ function main() {
         switch(key){
             case 'b':
                 pulseOn = !pulseOn;
-                if(pulseOn && !moveX && !rotateOn){ //if alter drawing is not already on, turn it on
+                if(pulseOn && !translating && !rotateOn && !zoomOn){ //if alter drawing is not already on, turn it on
                     alterDrawing();
                 }
                 break;
             case 'z':
-                zoom(1); //translate drawing 1 unit in +z direction
+                zoomOn = ! zoomOn;
+                tZ = 1;
+                if(zoomOn && !translating && !pulseOn && !rotateOn){ //if alter drawing is not already on, turn it on
+                    alterDrawing();
+                }
                 break;
             case 'a':
-                zoom(-1); //translate drawing 1 unit in -z direction
+                zoomOn = !zoomOn;
+                tZ = -1;
+                if(zoomOn && !translating && !pulseOn && !rotateOn){ //if alter drawing is not already on, turn it on
+                    alterDrawing();
+                }
                 break;
             case 'x':
-                moveX = !moveX;
-                if(moveX && !pulseOn && !rotateOn){ //if alter drawing is not already on, turn it on
+                translating = !translating;
+                tX = 1;
+                tY = 0;
+                if(translating && !pulseOn && !rotateOn && !zoomOn){ //if alter drawing is not already on, turn it on
                     alterDrawing();
                 }
                 break;
             case 'c':
-                translateDraw(-1, 0); //translate one pixel to the left
+                translating = !translating;
+                tX = -1;
+                tY = 0;
+                if(translating && !pulseOn && !rotateOn && !zoomOn){ //if alter drawing is not already on, turn it on
+                    alterDrawing();
+                }
                 break;
             case 'y':
-                translateDraw(0, 1); //translate one pixel up
+                translating = !translating;
+                tX = 0;
+                tY = 1;
+                if(translating && !pulseOn && !rotateOn && !zoomOn){ //if alter drawing is not already on, turn it on
+                    alterDrawing();
+                }
                 break;
             case 'u':
-                translateDraw(0, -1); //translate one pixel down
+                translating = !translating;
+                tX = 0;
+                tY = -1;
+                if(translating && !pulseOn && !rotateOn && !zoomOn){ //if alter drawing is not already on, turn it on
+                    alterDrawing();
+                }
                 break;
             case 'r':
                 rotateOn = !rotateOn;
-                if(rotateOn && !pulseOn && !moveX){ //if alter drawing is not already on, turn it on
+                if(rotateOn && !pulseOn && !translating && !zoomOn){ //if alter drawing is not already on, turn it on
                     alterDrawing();
                 }
                 break;
             case 'n':
                 drawNorms = !drawNorms;
-                if(!rotateOn && !pulseOn && !moveX){ //if we don't have an animation frame going, manually draw normals
+                if(!rotateOn && !pulseOn && !translating && !zoomOn){ //if we don't have an animation frame going, manually draw normals
                     makeDrawing();
                 }
                 break;
@@ -118,41 +143,28 @@ function alterDrawing(){
         theta -= 0.5; //decrement theta
     }
     if(pulseOn){ //if we want to pulse
-        if (pulseDist - 5 >= 0){ //if distance along normal > 100%
+        if (pulseDist - 2 >= 0){ //if distance along normal > 100%
             breathingIn = true; //switch to breathing in
         } else if (pulseDist <= 0){ //if we are back to starting positions
             breathingIn = false; //switch to breathing out
         }
 
         if(breathingIn){ //if breathing in
-            pulseDist -= 0.1; //decrement distance along normal vector
+            pulseDist -= 0.25; //decrement distance along normal vector
         } else { //if breathing out
-            pulseDist += 0.1; //increment distance along normal vector
+            pulseDist += 0.25; //increment distance along normal vector
         }
     }
-    if(moveX){ //if we want to translate in the +x direction
-        currentX += 1; //increment current x position
+    if(translating){ //if we want to translate in the direction
+        currentX += tX; //increment current x position
+        currentY += tY; //increment current y position
     }
-    if(moveX || pulseOn || rotateOn){ //if any of the animations are on
+    if(zoomOn){ //if we want to zoom
+        currentZ += tZ; //increment current z position
+    }
+    if(translating || pulseOn || rotateOn || zoomOn){ //if any of the animations are on
         makeDrawing(); //make the drawing
         id = requestAnimationFrame(alterDrawing); //loop the function
-    }
-}
-
-//handles zooming
-function zoom(){
-    currentZ += arguments[0]; //increment currentZ position by given amount
-    if(!moveX && !pulseOn && !rotateOn){ //if no animations are running, manually draw
-        makeDrawing();
-    }
-}
-
-//Translates the drawing on the screen in x and y directions
-function translateDraw(){
-    currentX += parseFloat(arguments[0]); //increment x position by first argument
-    currentY += parseFloat(arguments[1]); //increment y position by second argument
-    if(!moveX && !pulseOn && !rotateOn){ //if no animations are running, manually draw
-        makeDrawing();
     }
 }
 
@@ -207,6 +219,7 @@ function makeDrawing(){
 
     //create model matrix from current relevant information
     modelMatrix = mult(translate(across*0.01*currentX, tall*0.01*currentY, deep*0.5*currentZ), rotate(theta, vec3(1, 0, 0)));
+    console.log(across*0.01*currentX, tall*0.01*currentY, deep*0.5*currentZ);
     let MMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
     gl.uniformMatrix4fv(MMatrixLoc, false, flatten(modelMatrix)); //load in model matrix
 
@@ -219,7 +232,6 @@ function makeDrawing(){
         let toDraw = [];
         for(let j = 0; j < faceArray[i].length; j++){ //push enough color vectors for each
             toDraw.push(vec4(faceArray[i][j][0]+mVec[0], faceArray[i][j][1]+mVec[1], faceArray[i][j][2]+mVec[2], 1.0));
-            //pulseArray.push(mVec);
             colors.push(mcolor);
         }
         let pBuffer = gl.createBuffer();
@@ -252,9 +264,14 @@ function reset(){
     currentZ = 0;
     currentY = 0;
     currentX = 0;
+    tX = 0;
+    tY = 0;
+    tZ = 0;
     theta = 0;
-    moveX = false;
+    translating = false;
     pulseOn = false;
     rotateOn = false;
     drawNorms = false;
+    translating = false;
+    zoomOn = false;
 }

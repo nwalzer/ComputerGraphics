@@ -127,11 +127,11 @@ function parseFile(evt){
             if(aspect < 0.9 || (right - left) > 100 || (top-bottom) > 100){ //if height > width or coordinates in the hundreds
                 offsetZ = 1000; //Increase the distance to the mesh
             }
-            let theta = (Math.atan(((top-bottom)/2)/offsetZ) * (180/Math.PI))*2; //calculate fovY
+            let theta = (Math.atan((Math.max(right-left, top-bottom)/2)/offsetZ) * (180/Math.PI))*2; //calculate fovY
 
-            projMatrix = perspective(theta, aspect, 0.1, 1000+offsetZ+(maxZ-minZ)); //set perspective matrix, increase drawing depth
+            projMatrix = perspective(theta, 1, 0.1, 1000+offsetZ+100*(maxZ-minZ)); //set perspective matrix, increase drawing depth
 
-            let eye = vec3(right-((right-left)/2), top-((top-bottom)/2), maxZ+offsetZ+5); //set eye to center on object
+            let eye = vec3(right-((right-left)/2), top-((top-bottom)/2), maxZ + offsetZ + 10);
             let at = vec3(right-((right-left)/2), top-((top-bottom)/2), maxZ); //set at to center on object
             let up = vec3(0.0, 1.0, 0.0); //up
             let viewMatrix = lookAt(eye, at, up); //set view matrix
@@ -139,7 +139,8 @@ function parseFile(evt){
             let viewMatrixLoc = gl.getUniformLocation(program, 'viewMatrix');
             gl.uniformMatrix4fv(viewMatrixLoc, false, flatten(viewMatrix)); //load in view matrix
 
-            if (aspect < 1) { //if h > w
+            gl.viewport(0, 0, 400, 400);
+            /*if (aspect < 1) { //if h > w
                 let width = (400 * (right-left)) / (top-bottom);
                 gl.viewport((400-width)/2, 0, width, 400);
             } else { //if w > h
