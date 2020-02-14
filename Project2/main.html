@@ -43,7 +43,7 @@
         <script src="lib/webgl-utils.js"></script>
         <script src="lib/initShaders.js"></script>
         <script src="lib/MV.js"></script>
-        <script src="lib/fileMode.js"></script>
+        <script src="lib/fileParse.js"></script>
 
         <script src="main.js"></script>
 
@@ -57,9 +57,11 @@
         <form id="fileInput">
             <input type="file" id="drawModeFile" name="drawModeFile" accept=".ply">
             <button type="button" id="rstbtn">Reset Drawing</button>
+            <button type="button" id="meshtoggle">Toggle mesh</button>
         </form>
-        <p>Press A to zoom out, Z to zoom in, Y to translate the drawing upwards, U to translate the drawing downwards</p>
-        <p>X to toggle translating to the right, C to translate to the left, R to toggle x-axis rotation, B to toggle pulsing, N to toggle displaying the normal vectors</p>
+        <p>Press the reset button to end all animations and restore the drawing to its original positioning. Press the toggle mesh button to toggle between a mesh and a filled object</p>
+        <p>Press A to toggle zooming out, Z to toggle zooming in, Y to toggle translating upwards, U to toggle translating downwards</p>
+        <p>X to toggle translating to the right, C to toggle translating to the left, R to toggle x-axis rotation, B to toggle pulsing, N to toggle displaying the normal vectors</p>
         <p>Select from the mesh color picker to change the color of the mesh. Select from the normal color picker to change the color of the surface normals</p>
         <form class="form-inline">
             <div class="form-group">

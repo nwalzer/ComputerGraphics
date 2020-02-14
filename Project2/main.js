@@ -1,8 +1,9 @@
 /* EXTRA FEATURES:
-    - Press 'u' to delete the most recent vertex (draw mode only)
-    - Draw lines using the color selected from the custom color box
-    - Drawing a single point on the screen displays the point
-    - Use the arrow keys to translate your file or drawing by 1px per press
+    - Press 'n' to draw surface normals
+    - Specify custom mesh colors using the mesh color picker box
+    - Specify custom surface normal colors using normal color picker box
+    - Press the reset button to restore the drawing to its original positioning
+    - Press the Toggle Mesh button to swap between a mesh and a filled object
 
     A more detailed explanation of these features can be found in the
     Extra Features section of README.txt
@@ -12,7 +13,7 @@
 let pointsArray = [], faceArray = [], projMatrix = [], modelMatrix = [], normalArray = [];
 let gl, program, canvas;
 let currentZ = 0, currentX = 0, currentY = 0, pulseDist = 0, theta = 0, across = 0, tall = 0, deep = 0, tX = 0, tY = 0, tZ = 0;
-let breathingIn = false, translating = false, pulseOn = false, rotateOn = false, drawNorms = false, zoomOn = false;
+let breathingIn = false, translating = false, pulseOn = false, rotateOn = false, drawNorms = false, zoomOn = false, isMesh = true, animated = false;
 let mcolor, ncolor;
 
 function main() {
@@ -25,8 +26,8 @@ function main() {
         console.log('Failed to get the rendering context for WebGL');
         return;
     }
-    gl.enable(gl.DEPTH_TEST);
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.enable(gl.DEPTH_TEST); //enable Z buffer
+    gl.clearColor(0.0, 0.0, 0.0, 1.0); //clear to black
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // Get file input button and add event handler
@@ -39,7 +40,9 @@ function main() {
 
     var vPointSize = gl.getUniformLocation(program, "vPointSize");
     gl.uniform1f(vPointSize, 5.0);
-    modelMatrix = mat4();
+    gl.viewport(0, 0, 400, 400); //static viewport
+
+    modelMatrix = mat4(); //initialize model and projection matrices
     projMatrix = mat4();
 
     window.onkeydown = function(event) {
@@ -50,74 +53,82 @@ function main() {
         let key = event.key;
         switch(key){
             case 'b':
-                pulseOn = !pulseOn;
-                if(pulseOn && !translating && !rotateOn && !zoomOn){ //if alter drawing is not already on, turn it on
+                pulseOn = !pulseOn; //toghle pulsing
+                if(pulseOn && !animated){ //if alter drawing is not already on, turn it on
+                    animated = true;
                     alterDrawing();
                 }
                 break;
             case 'z':
-                zoomOn = ! zoomOn;
-                tZ = 1;
-                if(zoomOn && !translating && !pulseOn && !rotateOn){ //if alter drawing is not already on, turn it on
+                zoomOn = ! zoomOn; //toggle zooming
+                tZ = 1; //set zoom increment
+                if(zoomOn && !animated){ //if alter drawing is not already on, turn it on
+                    animated = true;
                     alterDrawing();
                 }
                 break;
             case 'a':
-                zoomOn = !zoomOn;
-                tZ = -1;
-                if(zoomOn && !translating && !pulseOn && !rotateOn){ //if alter drawing is not already on, turn it on
+                zoomOn = !zoomOn; //toggle zooming
+                tZ = -1; //set zoom increment
+                if(zoomOn && !animated){ //if alter drawing is not already on, turn it on
+                    animated = true;
                     alterDrawing();
                 }
                 break;
             case 'x':
-                translating = !translating;
-                tX = 1;
-                tY = 0;
-                if(translating && !pulseOn && !rotateOn && !zoomOn){ //if alter drawing is not already on, turn it on
+                translating = !translating; //toggle translation
+                tX = 1; //set x increment
+                tY = 0; //set y increment
+                if(translating && !animated){ //if alter drawing is not already on, turn it on
+                    animated = true;
                     alterDrawing();
                 }
                 break;
             case 'c':
-                translating = !translating;
-                tX = -1;
-                tY = 0;
-                if(translating && !pulseOn && !rotateOn && !zoomOn){ //if alter drawing is not already on, turn it on
+                translating = !translating; //toggle translation
+                tX = -1; //toggle x increment
+                tY = 0; //toggle y increment
+                if(translating && !animated){ //if alter drawing is not already on, turn it on
+                    animated = true;
                     alterDrawing();
                 }
                 break;
             case 'y':
-                translating = !translating;
-                tX = 0;
-                tY = 1;
-                if(translating && !pulseOn && !rotateOn && !zoomOn){ //if alter drawing is not already on, turn it on
+                translating = !translating; //toggle translation
+                tX = 0; //set x increment
+                tY = 1; //set y increment
+                if(translating && !animated){ //if alter drawing is not already on, turn it on
+                    animated = true;
                     alterDrawing();
                 }
                 break;
             case 'u':
-                translating = !translating;
-                tX = 0;
-                tY = -1;
-                if(translating && !pulseOn && !rotateOn && !zoomOn){ //if alter drawing is not already on, turn it on
+                translating = !translating; //toggle translation
+                tX = 0; //set x increment
+                tY = -1; //set y increment
+                if(translating && !animated){ //if alter drawing is not already on, turn it on
+                    animated = true;
                     alterDrawing();
                 }
                 break;
             case 'r':
-                rotateOn = !rotateOn;
-                if(rotateOn && !pulseOn && !translating && !zoomOn){ //if alter drawing is not already on, turn it on
+                rotateOn = !rotateOn; //toggle rotation
+                if(rotateOn && !animated){ //if alter drawing is not already on, turn it on
+                    animated = true;
                     alterDrawing();
                 }
                 break;
             case 'n':
-                drawNorms = !drawNorms;
-                if(!rotateOn && !pulseOn && !translating && !zoomOn){ //if we don't have an animation frame going, manually draw normals
+                drawNorms = !drawNorms; //toggle drawing normals
+                if(!animated){ //if we don't have an animation frame going, manually draw normals
                     makeDrawing();
                 }
                 break;
         }
     };
 
-    mcolor = vec4(1.0, 1.0, 1.0, 1.0);
-    ncolor = vec4(1.0, 0.0, 0.0, 1.0);
+    mcolor = vec4(1.0, 1.0, 1.0, 1.0); //initialize mesh color
+    ncolor = vec4(1.0, 0.0, 0.0, 1.0); //initialize normal color
 
     let meshcolor = document.getElementById("meshcolor");
     meshcolor.onchange = function(event){ //store and display user's choice of color
@@ -129,12 +140,16 @@ function main() {
         hex2vec4(normcolor.value.toString(), false); //convert hex value to RGB, store in color cycler
         makeDrawing(); //redraw using new color
     };
-
     let rstbtn = document.getElementById("rstbtn");
-    rstbtn.onclick = function(event){
-        reset();
+    rstbtn.onclick = function(event){ //set reset button function
+        reset(); //restore original drawing
         makeDrawing();
-    }
+    };
+    let meshToggle = document.getElementById("meshtoggle");
+    meshToggle.onclick = function(){
+        isMesh = !isMesh; //mesh toggle
+        makeDrawing();
+    };
 }
 
 //Handles rotation, pulse, and translate animations. Designed so that there is always at most one animation frame running
@@ -165,6 +180,8 @@ function alterDrawing(){
     if(translating || pulseOn || rotateOn || zoomOn){ //if any of the animations are on
         makeDrawing(); //make the drawing
         id = requestAnimationFrame(alterDrawing); //loop the function
+    } else {
+        animated = false;
     }
 }
 
@@ -175,10 +192,10 @@ function hex2vec4(hval, isMesh){
     let r = ((dval & 0xFF0000) >> 16)/255; //get r byte
     let g = ((dval & 0x00FF00) >> 8)/255; //get g byte
     let b = (dval & 0x0000FF)/255; //get b byte
-    if(isMesh){
-        mcolor = vec4(r, g, b, 1.0)
+    if(isMesh){ //if we are working with mesh coloring
+        mcolor = vec4(r, g, b, 1.0); //set mesh color
     } else {
-        ncolor = vec4(r, g, b, 1.0)
+        ncolor = vec4(r, g, b, 1.0); //set normal color
     }
 }
 
@@ -218,8 +235,7 @@ function makeDrawing(){
     gl.uniformMatrix4fv(projMatrixLoc, false, flatten(projMatrix)); //load in projection matrix
 
     //create model matrix from current relevant information
-    modelMatrix = mult(translate(across*0.01*currentX, tall*0.01*currentY, deep*0.5*currentZ), rotate(theta, vec3(1, 0, 0)));
-    console.log(across*0.01*currentX, tall*0.01*currentY, deep*0.5*currentZ);
+    modelMatrix = mult(translate(across*0.01*currentX, tall*0.01*currentY, deep*0.5*currentZ), rotate(theta, vec3(1, 0, 0))); //always set model matrix to be sum of translations * sum of rotations
     let MMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
     gl.uniformMatrix4fv(MMatrixLoc, false, flatten(modelMatrix)); //load in model matrix
 
@@ -227,12 +243,14 @@ function makeDrawing(){
 
         let colors = [];
         let rawNormal = [normalArray[i][1][0]-normalArray[i][0][0], normalArray[i][1][1]-normalArray[i][0][1], normalArray[i][1][2]-normalArray[i][0][2]];
-        //let mVec = vec4(normalArray[i][1][0]*pulseDist, normalArray[i][1][1]*pulseDist, normalArray[i][1][2]*pulseDist, 1);
+        //raw normal is the surface normal centered on the origin
         let mVec = vec4(rawNormal[0]*pulseDist, rawNormal[1]*pulseDist, rawNormal[2]*pulseDist, 1);
+        //mVec is the normal vector scaled between 0 and 2x the unit normal vector length
         let toDraw = [];
         for(let j = 0; j < faceArray[i].length; j++){ //push enough color vectors for each
             toDraw.push(vec4(faceArray[i][j][0]+mVec[0], faceArray[i][j][1]+mVec[1], faceArray[i][j][2]+mVec[2], 1.0));
-            colors.push(mcolor);
+            //increment each vertex by given coordinate in scaled normal vector
+            colors.push(mcolor); //push mesh color vectors
         }
         let pBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
@@ -250,7 +268,11 @@ function makeDrawing(){
         gl.enableVertexAttribArray(vColor);
         gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0); //enable coloring
 
-        gl.drawArrays(gl.LINE_LOOP, 0, toDraw.length);
+        if(isMesh){ //if we want to draw a mesh
+            gl.drawArrays(gl.LINE_LOOP, 0, toDraw.length);
+        } else { //if we want to draw a filled object
+            gl.drawArrays(gl.TRIANGLES, 0, toDraw.length);
+        }
     }
 
     if(drawNorms){ //if we want to draw normals
@@ -258,20 +280,22 @@ function makeDrawing(){
     }
 }
 
+//reset all animation handling and custom options to initial settings
 function reset(){
-    breathingIn = false;
-    pulseDist = 0;
-    currentZ = 0;
-    currentY = 0;
-    currentX = 0;
-    tX = 0;
-    tY = 0;
-    tZ = 0;
-    theta = 0;
-    translating = false;
-    pulseOn = false;
-    rotateOn = false;
-    drawNorms = false;
-    translating = false;
-    zoomOn = false;
+    breathingIn = false; //used for pulse direction
+    pulseDist = 0; //scalar of normal vector for pulsing
+    currentZ = 0; //total Z translation
+    currentY = 0; //total Y translation
+    currentX = 0; //total X translation
+    tX = 0; //x translate direction
+    tY = 0; //y translate direction
+    tZ = 0; //z translate direction
+    theta = 0; //rotation angle
+    translating = false; //translation animation
+    pulseOn = false; //pulse animation
+    rotateOn = false; //rotation animation
+    drawNorms = false; //drawing normals
+    zoomOn = false; //zooming animation
+    isMesh = true; //draw a mesh or object
+    animated = false; //animation frame running
 }

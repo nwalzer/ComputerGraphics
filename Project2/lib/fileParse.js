@@ -139,14 +139,6 @@ function parseFile(evt){
             let viewMatrixLoc = gl.getUniformLocation(program, 'viewMatrix');
             gl.uniformMatrix4fv(viewMatrixLoc, false, flatten(viewMatrix)); //load in view matrix
 
-            gl.viewport(0, 0, 400, 400);
-            /*if (aspect < 1) { //if h > w
-                let width = (400 * (right-left)) / (top-bottom);
-                gl.viewport((400-width)/2, 0, width, 400);
-            } else { //if w > h
-                let height = (400 * (top-bottom)) / (right-left);
-                gl.viewport(0, (400-height)/2, 400, height);
-            } // */
             across = right-left; //set global translation variables
             tall = top-bottom; //these make translating a function of dimensions rather than hardcoded values
             deep = maxZ-minZ;
