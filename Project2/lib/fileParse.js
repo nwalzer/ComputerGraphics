@@ -115,10 +115,10 @@ function parseFile(evt){
                     nx /= nlength/(0.1*(right-left)); //set normals to be function of width
                     ny /= nlength/(0.1*(right-left));
                     nz /= nlength/(0.1*(right-left));
-                } // */
+                } //this if/else block simply standardizes the height of the normal vectors
 
                 normalArray.push([vec4(xavg, yavg, zavg, 1.0), vec4(nx+xavg, ny+yavg, nz+zavg, 1.0)]); //push line representing this face's normal
-                faceArray.push(thisFace);
+                faceArray.push(thisFace); //push face to face array
                 i++;
             }
 
