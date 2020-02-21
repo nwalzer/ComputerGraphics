@@ -1,75 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <title>Project 2</title>
-        <style>
-            .hidden{
-                opacity: 0.0;
-            }
+<head>
+    <meta charset="utf-8" />
+    <title>Meshes</title>
 
-            canvas{
-                border: 1px solid black;
-            }
-        </style>
+    <script id="vshader" type="x-shader/x-vertex">
+	attribute vec4 vPosition;
+	uniform mat4 projectionMatrix;
+	uniform mat4 modelMatrix;
+	attribute vec4 vColor;
+	varying vec4 fColor;
 
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	void main() {
+		gl_Position = projectionMatrix * modelMatrix * vPosition;	// Point position
+  		gl_PointSize = 10.0;		// Point size
+  		fColor = vColor;
+  	}
+	</script>
 
-        <script id="vshader" type="x-shader/x-vertex">
-            attribute vec4 vPosition;
-            attribute vec4 vColor;
-            varying vec4 fColor;
-            uniform mat4 projMatrix;
-            uniform mat4 viewMatrix;
-            uniform mat4 modelMatrix;
-            uniform float vPointSize;
+    <script id="fshader" type="x-shader/x-fragment">
+	precision mediump float;
+	varying vec4 fColor;
 
-            void main() {
-                gl_Position = projMatrix * viewMatrix * modelMatrix * vPosition;
-                gl_PointSize = vPointSize;
-                fColor = vColor;
-            }
-        </script>
+	void main()
+	{
+		gl_FragColor = fColor;	// Point color
+  	}
+	</script>
 
-        <script id="fshader" type="x-shader/x-fragment">
-            precision mediump float;
-            varying vec4 fColor;
+    <script src="lib/webgl-utils.js"></script>
+    <script src="lib/initShaders.js"></script>
+    <script src="lib/MV.js"></script>
 
-            void main() {
-                gl_FragColor = fColor;
-            }
-        </script>
+    <script src="main.js"></script>
 
-        <script src="lib/webgl-utils.js"></script>
-        <script src="lib/initShaders.js"></script>
-        <script src="lib/MV.js"></script>
-        <script src="lib/fileParse.js"></script>
+</head>
 
-        <script src="main.js"></script>
+<body onload="main()">
 
-    </head>
+<div style="text-align: center">
 
-    <body onload="main()">
-        <canvas id="webgl" width="400" height="400">
-            Please use a browser that supports the "canvas" tag.
-        </canvas>
+    <canvas id="webgl" width="400" height="400" style="border: 1px solid black;">
+        Please use a browser that supports the "canvas" tag.
+    </canvas>
 
-        <form id="fileInput">
-            <input type="file" id="drawModeFile" name="drawModeFile" accept=".ply">
-            <button type="button" id="rstbtn">Reset Drawing</button>
-            <button type="button" id="meshtoggle">Toggle mesh</button>
-        </form>
-        <p>Press the reset button to end all animations and restore the drawing to its original positioning. Press the toggle mesh button to toggle between a mesh and a filled object</p>
-        <p>Press A to toggle zooming out, Z to toggle zooming in, Y to toggle translating upwards, U to toggle translating downwards</p>
-        <p>X to toggle translating to the right, C to toggle translating to the left, R to toggle x-axis rotation, B to toggle pulsing, N to toggle displaying the normal vectors</p>
-        <p>Select from the mesh color picker to change the color of the mesh. Select from the normal color picker to change the color of the surface normals</p>
-        <form class="form-inline">
-            <div class="form-group">
-                <label>Mesh Color: </label>
-                <input type="color" id="meshcolor" value="#FFFFFF">
-                <label>Normal Color: </label>
-                <input type="color" id="normcolor" value="#FF0000">
-            </div>
-        </form>
-    </body>
+</div>
+
+</body>
 </html>

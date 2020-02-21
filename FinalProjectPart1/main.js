@@ -1,301 +1,254 @@
-/* EXTRA FEATURES:
-    - Press 'n' to draw surface normals
-    - Specify custom mesh colors using the mesh color picker box
-    - Specify custom surface normal colors using normal color picker box
-    - Press the reset button to restore the drawing to its original positioning
-    - Press the Toggle Mesh button to swap between a mesh and a filled object
+var points;
+var colors;
 
-    A more detailed explanation of these features can be found in the
-    Extra Features section of README.txt
-*/
+var NumVertices  = 36;
+let shapeArray = [];
+let colorArray = [];
+var pointsArray = [];
+var normalsArray = [];
 
+var gl;
+var va = vec4(0.0, 0.0, -1.0,1);
+var vb = vec4(0.0, 0.942809, 0.333333, 1);
+var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
+var vd = vec4(0.816497, -0.471405, 0.333333,1);
+var numTimesToSubdivide = 5;
+var index = 0;
 
-let pointsArray = [], faceArray = [], projMatrix = [], modelMatrix = [], normalArray = [];
-let gl, program, canvas;
-let currentZ = 0, currentX = 0, currentY = 0, pulseDist = 0, theta = 0, across = 0, tall = 0, deep = 0, tX = 0, tY = 0, tZ = 0;
-let breathingIn = false, translating = false, pulseOn = false, rotateOn = false, drawNorms = false, zoomOn = false, isMesh = true, animated = false;
-let mcolor, ncolor;
+var fovy = 45.0;  // Field-of-view in Y direction angle (in degrees)
+var program;
 
-function main() {
+var mvMatrix, pMatrix;
+var modelView, projection;
+var eye = vec3(0.0, 0.0, 5);
+let theta = 0, theta2 = 0, theta3 = 0;
+let hor = 5, hor2 = 2, vert = 1, vert2 = -5;
+const at = vec3(0.0, 0.0, 0.0);
+const up = vec3(0.0, 1.0, 0.0);
+
+var stack = [];
+
+function main()
+{
     // Retrieve <canvas> element
-    canvas = document.getElementById('webgl');
+    var canvas = document.getElementById('webgl');
 
     // Get the rendering context for WebGL
-    gl = WebGLUtils.setupWebGL(canvas, {preserveDrawingBuffer:true});
-    if (!gl) {
+    gl = WebGLUtils.setupWebGL(canvas);
+
+    //Check that the return value is not null.
+    if (!gl)
+    {
         console.log('Failed to get the rendering context for WebGL');
         return;
     }
-    gl.enable(gl.DEPTH_TEST); //enable Z buffer
-    gl.clearColor(0.0, 0.0, 0.0, 1.0); //clear to black
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    // Get file input button and add event handler
-    let fileInput = document.getElementById("drawModeFile");
-    fileInput.addEventListener("change", parseFile); //add event listener to the file upload button
 
     // Initialize shaders
     program = initShaders(gl, "vshader", "fshader");
     gl.useProgram(program);
 
-    var vPointSize = gl.getUniformLocation(program, "vPointSize");
-    gl.uniform1f(vPointSize, 5.0);
-    gl.viewport(0, 0, 400, 400); //static viewport
+    //Set up the viewport
+    gl.viewport( 0, 0, 400, 400);
 
-    modelMatrix = mat4(); //initialize model and projection matrices
-    projMatrix = mat4();
+    aspect =  canvas.width/canvas.height;
+    // Set clear color
+    gl.clearColor(1.0, 1.0, 1.0, 1.0);
 
-    window.onkeydown = function(event) {
-        let el = document.getElementById("drawModeFile");
-        if(el.value === ""){
-            return;
-        }
-        let key = event.key;
-        switch(key){
-            case 'b':
-                pulseOn = !pulseOn; //toghle pulsing
-                if(pulseOn && !animated){ //if alter drawing is not already on, turn it on
-                    animated = true;
-                    alterDrawing();
-                }
-                break;
-            case 'z':
-                zoomOn = ! zoomOn; //toggle zooming
-                tZ = 1; //set zoom increment
-                if(zoomOn && !animated){ //if alter drawing is not already on, turn it on
-                    animated = true;
-                    alterDrawing();
-                }
-                break;
-            case 'a':
-                zoomOn = !zoomOn; //toggle zooming
-                tZ = -1; //set zoom increment
-                if(zoomOn && !animated){ //if alter drawing is not already on, turn it on
-                    animated = true;
-                    alterDrawing();
-                }
-                break;
-            case 'x':
-                translating = !translating; //toggle translation
-                tX = 1; //set x increment
-                tY = 0; //set y increment
-                if(translating && !animated){ //if alter drawing is not already on, turn it on
-                    animated = true;
-                    alterDrawing();
-                }
-                break;
-            case 'c':
-                translating = !translating; //toggle translation
-                tX = -1; //toggle x increment
-                tY = 0; //toggle y increment
-                if(translating && !animated){ //if alter drawing is not already on, turn it on
-                    animated = true;
-                    alterDrawing();
-                }
-                break;
-            case 'y':
-                translating = !translating; //toggle translation
-                tX = 0; //set x increment
-                tY = 1; //set y increment
-                if(translating && !animated){ //if alter drawing is not already on, turn it on
-                    animated = true;
-                    alterDrawing();
-                }
-                break;
-            case 'u':
-                translating = !translating; //toggle translation
-                tX = 0; //set x increment
-                tY = -1; //set y increment
-                if(translating && !animated){ //if alter drawing is not already on, turn it on
-                    animated = true;
-                    alterDrawing();
-                }
-                break;
-            case 'r':
-                rotateOn = !rotateOn; //toggle rotation
-                if(rotateOn && !animated){ //if alter drawing is not already on, turn it on
-                    animated = true;
-                    alterDrawing();
-                }
-                break;
-            case 'n':
-                drawNorms = !drawNorms; //toggle drawing normals
-                if(!animated){ //if we don't have an animation frame going, manually draw normals
-                    makeDrawing();
-                }
-                break;
-        }
-    };
+    // Clear <canvas> by clearing the color buffer
+    gl.enable(gl.DEPTH_TEST);
 
-    mcolor = vec4(1.0, 1.0, 1.0, 1.0); //initialize mesh color
-    ncolor = vec4(1.0, 0.0, 0.0, 1.0); //initialize normal color
+    points = [];
+    colors = [];
 
-    let meshcolor = document.getElementById("meshcolor");
-    meshcolor.onchange = function(event){ //store and display user's choice of color
-        hex2vec4(meshcolor.value.toString(), true); //convert hex value to RGB, store in color cycler
-        makeDrawing(); //redraw using new color
-    };
-    let normcolor = document.getElementById("normcolor");
-    normcolor.onchange = function(event){ //store and display user's choice of color
-        hex2vec4(normcolor.value.toString(), false); //convert hex value to RGB, store in color cycler
-        makeDrawing(); //redraw using new color
-    };
-    let rstbtn = document.getElementById("rstbtn");
-    rstbtn.onclick = function(event){ //set reset button function
-        reset(); //restore original drawing
-        makeDrawing();
-    };
-    let meshToggle = document.getElementById("meshtoggle");
-    meshToggle.onclick = function(){
-        isMesh = !isMesh; //mesh toggle
-        makeDrawing();
-    };
+
+    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
+
+    shapeArray.push(cube());
+    colorArray.push(vec4(1.0, 0.0, 0.0, 1.0)); //red cube
+
+    shapeArray.push(cube());
+    colorArray.push(vec4(0.0, 1.0, 0.0, 1.0)); //green cube
+
+    shapeArray.push(cube());
+    colorArray.push(vec4(0.0, 0.0, 1.0, 1.0)); //blue cube
+
+    shapeArray.push(pointsArray);
+    colorArray.push(vec4(1.0, 0.0, 0.0, 1.0)); //red sphere
+
+    shapeArray.push(pointsArray);
+    colorArray.push(vec4(0.0, 1.0, 0.0, 1.0)); //green sphere
+
+    shapeArray.push(pointsArray);
+    colorArray.push(vec4(0.0, 0.0, 1.0, 1.0)); //blue sphere
+
+    projection = gl.getUniformLocation(program, "projectionMatrix");
+    modelView = gl.getUniformLocation(program, "modelMatrix");
+
+    pMatrix = perspective(fovy, aspect, .1, 100);
+    gl.uniformMatrix4fv( projection, false, flatten(pMatrix) );
+
+    render();
 }
 
-//Handles rotation, pulse, and translate animations. Designed so that there is always at most one animation frame running
-function alterDrawing(){
-    if(rotateOn){ //if we want to rotate
-        theta -= 0.5; //decrement theta
-    }
-    if(pulseOn){ //if we want to pulse
-        if (pulseDist - 2 >= 0){ //if distance along normal > 100%
-            breathingIn = true; //switch to breathing in
-        } else if (pulseDist <= 0){ //if we are back to starting positions
-            breathingIn = false; //switch to breathing out
-        }
-
-        if(breathingIn){ //if breathing in
-            pulseDist -= 0.25; //decrement distance along normal vector
-        } else { //if breathing out
-            pulseDist += 0.25; //increment distance along normal vector
-        }
-    }
-    if(translating){ //if we want to translate in the direction
-        currentX += tX; //increment current x position
-        currentY += tY; //increment current y position
-    }
-    if(zoomOn){ //if we want to zoom
-        currentZ += tZ; //increment current z position
-    }
-    if(translating || pulseOn || rotateOn || zoomOn){ //if any of the animations are on
-        makeDrawing(); //make the drawing
-        id = requestAnimationFrame(alterDrawing); //loop the function
-    } else {
-        animated = false;
-    }
+function cube()
+{
+    var verts = [];
+    verts = verts.concat(quad( 1, 0, 3, 2 ));
+    verts = verts.concat(quad( 2, 3, 7, 6 ));
+    verts = verts.concat(quad( 3, 0, 4, 7 ));
+    verts = verts.concat(quad( 6, 5, 1, 2 ));
+    verts = verts.concat(quad( 4, 5, 6, 7 ));
+    verts = verts.concat(quad( 5, 4, 0, 1 ));
+    return verts;
 }
 
-//Takes in a string representing a color value in hex and converts it to rgb in the range of [0.0, 1.0]
-function hex2vec4(hval, isMesh){
-    hval = hval.replace("#", ""); //get rid of #
-    dval = parseInt(hval, 16); //get color in decimal
-    let r = ((dval & 0xFF0000) >> 16)/255; //get r byte
-    let g = ((dval & 0x00FF00) >> 8)/255; //get g byte
-    let b = (dval & 0x0000FF)/255; //get b byte
-    if(isMesh){ //if we are working with mesh coloring
-        mcolor = vec4(r, g, b, 1.0); //set mesh color
-    } else {
-        ncolor = vec4(r, g, b, 1.0); //set normal color
-    }
+function render()
+{
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    theta += 0.5;
+    theta2 -= 2;
+    theta3 += 4;
+
+    eye = vec3(0, 0, 20);
+    mvMatrix = lookAt(eye, at , up);
+
+    stack.push(mvMatrix);
+    mvMatrix = mult(mvMatrix, rotateY(theta)); //rotation at top level
+    gl.uniformMatrix4fv( modelView, false, flatten(mult(translate(0, 5, 0), mvMatrix)));
+    drawShape(shapeArray[0], colorArray[0]);
+    
+    stack.push(mvMatrix);
+        mvMatrix = mult(mult(mvMatrix, translate(hor, vert, 0)), rotateY(theta2));
+        stack.push(mvMatrix);
+            mvMatrix = mult(mult(mvMatrix, translate(hor2, vert2, 0)), rotateY(theta3));
+            gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
+            drawShape(shapeArray[3], colorArray[3]);
+        mvMatrix = stack.pop();
+        stack.push(mvMatrix);
+            mvMatrix = mult(mult(mvMatrix, translate(-hor2, vert2, 0)), rotateY(theta3));
+            gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
+            drawShape(shapeArray[1], colorArray[1]);
+        mvMatrix = stack.pop();
+        gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
+        drawShape(shapeArray[4], colorArray[4]);
+    mvMatrix = stack.pop();
+
+
+    stack.push(mvMatrix);
+        mvMatrix = mult(mult(mvMatrix, translate(-hor, vert, 0)), rotateY(theta2));
+        stack.push(mvMatrix);
+            mvMatrix = mult(mult(mvMatrix, translate(-hor2, vert2, 0)), rotateY(theta3));
+            gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
+            drawShape(shapeArray[5], colorArray[5]);
+        mvMatrix = stack.pop();
+        gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
+        drawShape(shapeArray[2], colorArray[2]);
+    mvMatrix = stack.pop();
+
+    gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
+
+    requestAnimationFrame(render)
 }
 
-//virtually the exact same code as make drawings, except this will draw the normal array rather than the face array
-function drawNormals(){
-    for(let i = 0; i < normalArray.length; i++){ //for each normal in normalArray
-        let pBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(normalArray[i]), gl.STREAM_DRAW); //create VBO
+function drawShape(shape, color) {
+    var fragColors = [];
 
-        let vPosition = gl.getAttribLocation(program, "vPosition");
-        gl.enableVertexAttribArray(vPosition);
-        gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0); //enable attribute
-
-        let colors = [];
-        for(let j = 0; j < normalArray[i].length; j++){ //push enough color vectors for each
-            colors.push(ncolor); //default normal color is red
-        }
-
-        let cBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STREAM_DRAW); //create color buffer
-
-        let vColor = gl.getAttribLocation(program, "vColor");
-        gl.enableVertexAttribArray(vColor);
-        gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0); //enable coloring
-
-        gl.drawArrays(gl.LINE_STRIP, 0, normalArray[i].length); //draw one line
+    for(var i = 0; i < shape.length; i++)
+    {
+        fragColors.push(color);
     }
+
+    var pBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(shape), gl.STATIC_DRAW);
+
+    var vPosition = gl.getAttribLocation(program,  "vPosition");
+    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPosition);
+
+    var cBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(fragColors), gl.STATIC_DRAW);
+
+    var vColor= gl.getAttribLocation(program,  "vColor");
+    gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vColor);
+
+    gl.drawArrays( gl.TRIANGLES, 0, shape.length );
+
 }
 
-//draws the current contents of the face array
-function makeDrawing(){
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); //clear screen
 
-    let projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
-    gl.uniformMatrix4fv(projMatrixLoc, false, flatten(projMatrix)); //load in projection matrix
+function quad(a, b, c, d)
+{
+    var verts = [];
 
-    //create model matrix from current relevant information
-    modelMatrix = mult(translate(across*0.01*currentX, tall*0.01*currentY, deep*0.5*currentZ), rotate(theta, vec3(1, 0, 0))); //always set model matrix to be sum of translations * sum of rotations
-    let MMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
-    gl.uniformMatrix4fv(MMatrixLoc, false, flatten(modelMatrix)); //load in model matrix
+    var vertices = [
+        vec4( -0.5, -0.5,  0.5, 1.0 ),
+        vec4( -0.5,  0.5,  0.5, 1.0 ),
+        vec4(  0.5,  0.5,  0.5, 1.0 ),
+        vec4(  0.5, -0.5,  0.5, 1.0 ),
+        vec4( -0.5, -0.5, -0.5, 1.0 ),
+        vec4( -0.5,  0.5, -0.5, 1.0 ),
+        vec4(  0.5,  0.5, -0.5, 1.0 ),
+        vec4(  0.5, -0.5, -0.5, 1.0 )
+    ];
 
-    for(let i = 0; i < faceArray.length; i++){ //for each polyline in pointsArray
+    var indices = [ a, b, c, a, c, d ];
 
-        let colors = [];
-        let rawNormal = [normalArray[i][1][0]-normalArray[i][0][0], normalArray[i][1][1]-normalArray[i][0][1], normalArray[i][1][2]-normalArray[i][0][2]];
-        //raw normal is the surface normal centered on the origin
-        let mVec = vec4(rawNormal[0]*pulseDist, rawNormal[1]*pulseDist, rawNormal[2]*pulseDist, 1);
-        //mVec is the normal vector scaled between 0 and 2x the unit normal vector length
-        let toDraw = [];
-        for(let j = 0; j < faceArray[i].length; j++){ //push enough color vectors for each
-            toDraw.push(vec4(faceArray[i][j][0]+mVec[0], faceArray[i][j][1]+mVec[1], faceArray[i][j][2]+mVec[2], 1.0));
-            //increment each vertex by given coordinate in scaled normal vector
-            colors.push(mcolor); //push mesh color vectors
-        }
-        let pBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(toDraw), gl.STREAM_DRAW); //create VBO
-
-        let vPosition = gl.getAttribLocation(program, "vPosition");
-        gl.enableVertexAttribArray(vPosition);
-        gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0); //enable attribute
-
-        let cBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STREAM_DRAW); //create color buffer
-
-        let vColor = gl.getAttribLocation(program, "vColor");
-        gl.enableVertexAttribArray(vColor);
-        gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0); //enable coloring
-
-        if(isMesh){ //if we want to draw a mesh
-            gl.drawArrays(gl.LINE_LOOP, 0, toDraw.length);
-        } else { //if we want to draw a filled object
-            gl.drawArrays(gl.TRIANGLES, 0, toDraw.length);
-        }
+    for ( var i = 0; i < indices.length; ++i )
+    {
+        verts.push( vertices[indices[i]] );
     }
 
-    if(drawNorms){ //if we want to draw normals
-        drawNormals();
+    return verts;
+}
+
+function triangle(a, b, c) {
+
+
+
+    pointsArray.push(a);
+    pointsArray.push(b);
+    pointsArray.push(c);
+
+    // normals are vectors
+
+    normalsArray.push(a[0],a[1], a[2], 0.0);
+    normalsArray.push(b[0],b[1], b[2], 0.0);
+    normalsArray.push(c[0],c[1], c[2], 0.0);
+
+    index += 3;
+
+}
+
+
+function divideTriangle(a, b, c, count) {
+    if ( count > 0 ) {
+
+        var ab = mix( a, b, 0.5);
+        var ac = mix( a, c, 0.5);
+        var bc = mix( b, c, 0.5);
+
+        ab = normalize(ab, true);
+        ac = normalize(ac, true);
+        bc = normalize(bc, true);
+
+        divideTriangle( a, ab, ac, count - 1 );
+        divideTriangle( ab, b, bc, count - 1 );
+        divideTriangle( bc, c, ac, count - 1 );
+        divideTriangle( ab, bc, ac, count - 1 );
+    }
+    else {
+        triangle( a, b, c );
     }
 }
 
-//reset all animation handling and custom options to initial settings
-function reset(){
-    breathingIn = false; //used for pulse direction
-    pulseDist = 0; //scalar of normal vector for pulsing
-    currentZ = 0; //total Z translation
-    currentY = 0; //total Y translation
-    currentX = 0; //total X translation
-    tX = 0; //x translate direction
-    tY = 0; //y translate direction
-    tZ = 0; //z translate direction
-    theta = 0; //rotation angle
-    translating = false; //translation animation
-    pulseOn = false; //pulse animation
-    rotateOn = false; //rotation animation
-    drawNorms = false; //drawing normals
-    zoomOn = false; //zooming animation
-    isMesh = true; //draw a mesh or object
-    animated = false; //animation frame running
+
+function tetrahedron(a, b, c, d, n) {
+    divideTriangle(a, b, c, n);
+    divideTriangle(d, c, b, n);
+    divideTriangle(a, d, b, n);
+    divideTriangle(a, c, d, n);
 }
