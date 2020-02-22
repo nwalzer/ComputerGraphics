@@ -46,10 +46,11 @@ function main()
     gl.viewport( 0, 0, 400, 400);
 
     // Set clear color
-    gl.clearColor(1.0, 1.0, 1.0, 1.0);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
     // Clear <canvas> by clearing the color buffer
     gl.enable(gl.DEPTH_TEST);
+    gl.cullFace(gl.BACK);
 
 
 
@@ -74,6 +75,8 @@ function main()
     shapeArray.push(pointsArray);
     colorArray.push(vec4(0.0, 0.0, 1.0, 1.0)); //blue sphere
 
+    colorArray.push(vec4(1.0, 1.0, 1.0, 1.0)); //White Lines
+
     generateLines();
 
     projection = gl.getUniformLocation(program, "projectionMatrix");
@@ -86,54 +89,59 @@ function main()
 }
 
 function generateLines(){
+    linesArray = [];
     let topmost = vec4(0.0, topVert, 0.0, 1.0);
-    let firstSplit = vec4(0.0, topVert - vert, 0.0, 1.0);
+    let firstSplit = vec4(0.0, topVert - (topVert - vert)/2, 0.0, 1.0);
 
-    let L = vec4(hor, topVert - vert, 0.0, 1.0); //left branch
+    let L = vec4(hor, topVert - (topVert - vert)/2, 0.0, 1.0); //left branch
     let LSplit = vec4(hor, -2, 0.0, 1.0);
     let LL = vec4(hor+hor2, -2, 0.0, 1.0); //left branch of left branch
     let centerLL = vec4(hor+hor2, vert2+1, 0.0, 1.0);
     let LR = vec4(hor-hor2, -2, 0.0, 1.0); //right branch of left branch
     let centerLR = vec4(hor-hor2, vert2+1, 0.0, 1.0);
 
-    let R = vec4(-hor, topVert - vert, 0.0, 1.0);
+    let R = vec4(-hor, topVert - (topVert - vert)/2, 0.0, 1.0);
     let RSplit = vec4(-hor, -2, 0.0, 1.0);
-    let RR = vec4(-hor+hor2, -2, 0.0, 1.0);
-    let centerRR = vec4(-hor+hor2, vert2+1, 0.0, 1.0);
     let RL = vec4(-hor-hor2, -2, 0.0, 1.0);
     let centerRL = vec4(-hor-hor2, vert2+1, 0.0, 1.0);
+    let RR = vec4(-hor+hor2, -2, 0.0, 1.0);
+    let centerRR = vec4(-hor+hor2, vert2+1, 0.0, 1.0);
 
-    linesArray.push([]); //top -> left
+    linesArray.push([]); //top vertical
     linesArray[0].push(topmost);
     linesArray[0].push(firstSplit);
-    linesArray[0].push(L);
-    linesArray[0].push(LSplit);
 
-    linesArray.push([]); //top -> right
-    linesArray[1].push(topmost);
-    linesArray[1].push(firstSplit);
+    linesArray.push([]); //top horizontal
+    linesArray[1].push(L);
     linesArray[1].push(R);
-    linesArray[1].push(RSplit);
 
-    linesArray.push([]); //left -> left
+    linesArray.push([]); //left vertical
+    linesArray[2].push(L);
     linesArray[2].push(LSplit);
-    linesArray[2].push(LL);
-    linesArray[2].push(centerLL);
 
-    linesArray.push([]); //left -> right
+    linesArray.push([]); //left vertical -> right
     linesArray[3].push(LSplit);
     linesArray[3].push(LR);
     linesArray[3].push(centerLR);
 
-    //linesArray.push([]); //right -> right
-    //linesArray[4].push(RSplit);
-    //linesArray[4].push(RR);
-    //linesArray[4].push(centerRR);
+    linesArray.push([]); //left vertical -> left
+    linesArray[4].push(LSplit);
+    linesArray[4].push(LL);
+    linesArray[4].push(centerLL);
 
-    linesArray.push([]); //right -> left
-    linesArray[4].push(RSplit);
-    linesArray[4].push(RL);
-    linesArray[4].push(centerRL);
+    linesArray.push([]); //right vertical
+    linesArray[5].push(R);
+    linesArray[5].push(RSplit);
+
+    linesArray.push([]); //right vertical -> left
+    linesArray[6].push(RSplit);
+    linesArray[6].push(RL);
+    linesArray[6].push(centerRL);
+
+    /*linesArray.push([]); //right vertical -> right
+    linesArray[7].push(RSplit);
+    linesArray[7].push(RR);
+    linesArray[7].push(centerRR);*/
 }
 
 function cube()
@@ -152,8 +160,11 @@ function render()
 {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     theta += 0.5;
+    theta = theta % 360;
     theta2 -= 2;
+    theta2 = theta2 % 360;
     theta3 += 4;
+    theta3 = theta3 % 360;
 
     mvMatrix = lookAt(eye, at , up);
 
@@ -209,16 +220,16 @@ function connect(){
         if(i > 1){
             stack.push(mvMatrix);
                 let temp = linesArray[i][0];
-                mvMatrix = mult(mvMatrix, translate(temp[0], temp[1], temp[2]));
+                mvMatrix = mult(mvMatrix, translate(temp[0], 0, temp[2]));
                 mvMatrix = mult(mvMatrix, rotateY(theta2));
-                mvMatrix = mult(mvMatrix, translate(-temp[0], -temp[1], -temp[2]));
+                mvMatrix = mult(mvMatrix, translate(-temp[0], 0, -temp[2]));
                 gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
             mvMatrix = stack.pop();
         }
         let fragColors = [];
 
         for (let j = 0; j < linesArray[i].length; j++) {
-            fragColors.push(vec4(0.0, 0.0, 0.0, 1.0));
+            fragColors.push(colorArray[6]);
         }
 
         let pBuffer = gl.createBuffer();
