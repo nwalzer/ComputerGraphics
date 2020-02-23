@@ -1,5 +1,6 @@
 
-let shapeArray = [], colorArray = [], pointsArray = [], normalsArray = [], linesArray = [];
+let shapeArray = [], colorArray = [], pointsArray = [], normalsArray = [], cubeNormalArray = [], linesArray = [];
+let cubeFlatNormal = [], cubeGNormal = [], sphereFlatNormal = [], sphereGNormal = [];
 
 let gl;
 let va = vec4(0.0, 0.0, -1.0,1);
@@ -8,6 +9,17 @@ let vc = vec4(-0.816497, -0.471405, 0.333333, 1);
 let vd = vec4(0.816497, -0.471405, 0.333333,1);
 let numTimesToSubdivide = 5;
 let index = 0;
+
+let lightPosition = vec4(7.0, 3.0, 3.0, 1.0 );
+var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
+var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
+var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
+
+var materialAmbient = vec4( 1.0, 1.0, 1.0, 1.0 );
+var materialDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
+var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
+var materialShininess = 100.0;
+var angle = 0.9;
 
 let fovy = 45.0;  // Field-of-view in Y direction angle (in degrees)
 let program;
@@ -50,6 +62,7 @@ function main()
 
     // Clear <canvas> by clearing the color buffer
     gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
     gl.cullFace(gl.BACK);
 
 
@@ -59,24 +72,21 @@ function main()
 
     shapeArray.push(cube());
     colorArray.push(vec4(1.0, 0.0, 0.0, 1.0)); //red cube
-
-    shapeArray.push(cube());
     colorArray.push(vec4(0.0, 1.0, 0.0, 1.0)); //green cube
-
-    shapeArray.push(cube());
     colorArray.push(vec4(0.0, 0.0, 1.0, 1.0)); //blue cube
+    cubeFlatNormal = fNormals(shapeArray[0]);
+    cubeGNormal = gNormals(shapeArray[0]);
 
     shapeArray.push(pointsArray);
     colorArray.push(vec4(1.0, 0.0, 0.0, 1.0)); //red sphere
-
-    shapeArray.push(pointsArray);
     colorArray.push(vec4(0.0, 1.0, 0.0, 1.0)); //green sphere
-
-    shapeArray.push(pointsArray);
     colorArray.push(vec4(0.0, 0.0, 1.0, 1.0)); //blue sphere
+    sphereFlatNormal = fNormals(shapeArray[1]);
+    sphereGNormal = fNormals(shapeArray[1]);
 
     colorArray.push(vec4(1.0, 1.0, 1.0, 1.0)); //White Lines
 
+    initCubeNormals();
     generateLines();
 
     projection = gl.getUniformLocation(program, "projectionMatrix");
@@ -85,7 +95,45 @@ function main()
     pMatrix = perspective(fovy, 1, .1, 100);
     gl.uniformMatrix4fv( projection, false, flatten(pMatrix) );
 
+    var diffuseProduct = mult(lightDiffuse, materialDiffuse);
+    var specularProduct = mult(lightSpecular, materialSpecular);
+    var ambientProduct = mult(lightAmbient, materialAmbient);
+    console.log(diffuseProduct, specularProduct, ambientProduct);
+
+    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+    gl.uniform4fv(gl.getUniformLocation(program, "specularProduct"), flatten(specularProduct));
+    gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"), flatten(ambientProduct));
+    gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
+    gl.uniform1f(gl.getUniformLocation(program, "shininess"), materialShininess);
+    gl.uniform1f(gl.getUniformLocation(program, "angle"), angle);
+    console.log(ambientProduct);
+
     render();
+}
+
+function initCubeNormals(){
+    //front right bottom top back left
+    let numNorms = 6;
+    for(let i = 0; i < numNorms; i++){ //front
+        cubeNormalArray.push(vec4(0.0, 0.0, 1.0, 1.0));
+    }
+    for(let i = 0; i < numNorms; i++){ //right
+        cubeNormalArray.push(vec4(1.0, 0.0, 0.0, 1.0));
+    }
+    for(let i = 0; i < numNorms; i++){ //bottom
+        cubeNormalArray.push(vec4(0.0, -1.0, 0.0, 1.0));
+    }
+    for(let i = 0; i < numNorms; i++){ //top
+        cubeNormalArray.push(vec4(0.0, 1.0, 0.0, 1.0));
+    }
+    for(let i = 0; i < numNorms; i++){ //back
+        cubeNormalArray.push(vec4(0.0, 0.0, -1.0, 1.0));
+    }
+    for(let i = 0; i < numNorms; i++){ //left
+        cubeNormalArray.push(vec4(-1.0, 0.0, 0.0, 1.0));
+    }
+    console.log(cube());
+    console.log(cubeNormalArray);
 }
 
 function generateLines(){
@@ -144,18 +192,6 @@ function generateLines(){
     linesArray[7].push(centerRR);*/
 }
 
-function cube()
-{
-    let verts = [];
-    verts = verts.concat(quad( 1, 0, 3, 2 ));
-    verts = verts.concat(quad( 2, 3, 7, 6 ));
-    verts = verts.concat(quad( 3, 0, 4, 7 ));
-    verts = verts.concat(quad( 6, 5, 1, 2 ));
-    verts = verts.concat(quad( 4, 5, 6, 7 ));
-    verts = verts.concat(quad( 5, 4, 0, 1 ));
-    return verts;
-}
-
 function render()
 {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -171,22 +207,22 @@ function render()
     stack.push(mvMatrix);
     mvMatrix = mult(mvMatrix, rotateY(theta)); //rotation at top level
     gl.uniformMatrix4fv( modelView, false, flatten(mult(translate(0, 5, 0), mvMatrix)));
-    drawShape(shapeArray[0], colorArray[0]);
+    drawShape(shapeArray[0], colorArray[0], true);
 
     stack.push(mvMatrix);
         mvMatrix = mult(mult(mvMatrix, translate(hor, vert, 0)), rotateY(theta2));
         stack.push(mvMatrix);
             mvMatrix = mult(mult(mvMatrix, translate(hor2, vert2, 0)), rotateY(theta3));
             gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
-            drawShape(shapeArray[3], colorArray[3]);
+            drawShape(shapeArray[1], colorArray[3], false);
         mvMatrix = stack.pop();
         stack.push(mvMatrix);
             mvMatrix = mult(mult(mvMatrix, translate(-hor2, vert2, 0)), rotateY(theta3));
             gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
-            drawShape(shapeArray[1], colorArray[1]);
+            drawShape(shapeArray[0], colorArray[1], true);
         mvMatrix = stack.pop();
         gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
-        drawShape(shapeArray[4], colorArray[4]);
+        drawShape(shapeArray[1], colorArray[4], false);
     mvMatrix = stack.pop();
 
 
@@ -195,17 +231,17 @@ function render()
         stack.push(mvMatrix);
             mvMatrix = mult(mult(mvMatrix, translate(-hor2, vert2, 0)), rotateY(theta3));
             gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
-            drawShape(shapeArray[5], colorArray[5]);
+            drawShape(shapeArray[1], colorArray[5], false);
         mvMatrix = stack.pop();
         if(fileUploaded){ //for custom uploaded .ply files
             stack.push(mvMatrix);
                 mvMatrix = mult(mult(mvMatrix, translate(hor2, vert2, 0)), rotateY(theta3));
                 gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
-                drawShape(shapeArray[6], colorArray[6]);
+                drawShape(shapeArray[3], colorArray[6], false);
             mvMatrix = stack.pop();
         }
         gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
-        drawShape(shapeArray[2], colorArray[2]);
+        drawShape(shapeArray[0], colorArray[2], true);
     mvMatrix = stack.pop();
 
     gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
@@ -216,7 +252,6 @@ function render()
 
 function connect(){
     for(let i = 0; i < linesArray.length; i++) {
-
         if(i > 1){
             stack.push(mvMatrix);
                 let temp = linesArray[i][0];
@@ -226,15 +261,27 @@ function connect(){
                 gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
             mvMatrix = stack.pop();
         }
+        let diffuseProduct = mult(lightDiffuse, colorArray[6]);
+        gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+
         let fragColors = [];
+        let lineNormal = [];
 
         for (let j = 0; j < linesArray[i].length; j++) {
-            fragColors.push(colorArray[6]);
+            lineNormal.push(lightPosition);
         }
+
+        var vNormal = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(lineNormal), gl.STREAM_DRAW);
+
+        var vNormalPosition = gl.getAttribLocation( program, "vNormal");
+        gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(vNormalPosition);
 
         let pBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(linesArray[i]), gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(linesArray[i]), gl.STREAM_DRAW);
 
         let vPosition = gl.getAttribLocation(program, "vPosition");
         gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
@@ -242,27 +289,39 @@ function connect(){
 
         let cBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(fragColors), gl.STATIC_DRAW);
-
-        let vColor = gl.getAttribLocation(program, "vColor");
-        gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vColor);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(fragColors), gl.STREAM_DRAW);
 
         gl.drawArrays(gl.LINE_STRIP, 0, linesArray[i].length);
     }
 }
 
-function drawShape(shape, color) {
-    let fragColors = [];
+function drawShape(shape, color, isCube) {
+    if(isCube){
+        var vNormal = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(cubeFlatNormal), gl.STREAM_DRAW);
 
-    for(let i = 0; i < shape.length; i++)
-    {
-        fragColors.push(color);
+        var vNormalPosition = gl.getAttribLocation( program, "vNormal");
+        gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(vNormalPosition);
+    } else {
+        var vNormal = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(sphereFlatNormal), gl.STREAM_DRAW);
+
+        var vNormalPosition = gl.getAttribLocation( program, "vNormal");
+        gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(vNormalPosition);    
     }
+
+    let diffuseProduct = mult(lightDiffuse, color);
+    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+    
+    let fragColors = [];
 
     let pBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(shape), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(shape), gl.STREAM_DRAW);
 
     let vPosition = gl.getAttribLocation(program,  "vPosition");
     gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
@@ -270,30 +329,36 @@ function drawShape(shape, color) {
 
     let cBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(fragColors), gl.STATIC_DRAW);
-
-    let vColor= gl.getAttribLocation(program,  "vColor");
-    gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vColor);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(fragColors), gl.STREAM_DRAW);
 
     gl.drawArrays( gl.TRIANGLES, 0, shape.length );
 
 }
 
+function cube() {
+    let verts = [];
+    verts = verts.concat(quad( 1, 0, 3, 2 )); //front
+    verts = verts.concat(quad( 2, 3, 7, 6 )); //right
+    verts = verts.concat(quad( 3, 0, 4, 7 )); //bottom
+    verts = verts.concat(quad( 6, 5, 1, 2 )); //top
+    verts = verts.concat(quad( 4, 5, 6, 7 )); //back
+    verts = verts.concat(quad( 5, 4, 0, 1 )); //left
+    return verts;
+}
 
-function quad(a, b, c, d)
-{
+function quad(a, b, c, d) {
     let verts = [];
 
     let vertices = [
-        vec4( -0.5, -0.5,  0.5, 1.0 ),
-        vec4( -0.5,  0.5,  0.5, 1.0 ),
-        vec4(  0.5,  0.5,  0.5, 1.0 ),
-        vec4(  0.5, -0.5,  0.5, 1.0 ),
-        vec4( -0.5, -0.5, -0.5, 1.0 ),
-        vec4( -0.5,  0.5, -0.5, 1.0 ),
-        vec4(  0.5,  0.5, -0.5, 1.0 ),
-        vec4(  0.5, -0.5, -0.5, 1.0 )
+        vec4( -0.5, -0.5,  0.5, 1.0 ), //bottom left front  0
+        vec4( -0.5,  0.5,  0.5, 1.0 ), //top left front     1
+        vec4(  0.5,  0.5,  0.5, 1.0 ), //top right front    2
+        vec4(  0.5, -0.5,  0.5, 1.0 ), //bottom right front 3
+
+        vec4( -0.5, -0.5, -0.5, 1.0 ), //botton left back   4
+        vec4( -0.5,  0.5, -0.5, 1.0 ), //top left back      5
+        vec4(  0.5,  0.5, -0.5, 1.0 ), //top right back     6
+        vec4(  0.5, -0.5, -0.5, 1.0 )  //bottom right back  7
     ];
 
     let indices = [ a, b, c, a, c, d ];
@@ -346,10 +411,59 @@ function divideTriangle(a, b, c, count) {
     }
 }
 
-
 function tetrahedron(a, b, c, d, n) {
     divideTriangle(a, b, c, n);
     divideTriangle(d, c, b, n);
     divideTriangle(a, d, b, n);
     divideTriangle(a, c, d, n);
+}
+function gNormals(shape) {
+    normalsArray = [];
+    for (let i = 0; i < shape.length; i++) {
+
+        normalsArray.push( vec4( shape[i][0],
+            shape[i][1],
+            shape[i][2],
+            0.0));
+    }
+    return normalsArray;
+}
+
+function fNormals(shape){
+    let normals = [];
+    for (let i = 0; i < shape.length; i += 3){
+
+        let intersections = [];
+        intersections.push(shape[i]);
+        intersections.push(shape[i+1]);
+        intersections.push(shape[i+2]);
+        let n = doNewell(intersections);
+        normals.push(n);
+        normals.push(n);
+        normals.push(n);
+
+    }
+    return normals;
+}
+
+function doNewell(intersect){
+
+    let nx = 0;
+    let ny = 0;
+    let nz = 0;
+
+    let current;
+    let next;
+
+    let i;
+
+    for (i = 0; i < intersect.length; i++) {
+        current = vec4(intersect[i % intersect.length]);
+        next = vec4(intersect[(i + 1) % intersect.length]);
+
+        nx += (current[1]-next[1])*(current[2]+next[2]);
+        ny += (current[2]-next[2])*(current[0]+next[0]);
+        nz += (current[0]-next[0])*(current[1]+next[1]);
+    }
+    return vec4(nx, ny, nz, 0.0);
 }
