@@ -103,6 +103,11 @@ function parseFile(evt){
                 }
                 i++;
             }
+            let rightBB = right[0]/divisor + shiftX;
+            let topBB = top[1]/divisor + shiftY;
+            let maxZBB = maxZ[2]/divisor + shiftZ;
+
+            //fileBB.push();
             fileUploaded = true;
             if(shapeArray.length === 3){
                 shapeArray.pop();

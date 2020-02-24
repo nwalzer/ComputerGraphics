@@ -1,6 +1,7 @@
 
 let shapeArray = [], colorArray = [], sphereArray = [], linesArray = [], fileFaces = [];
 let cubeFlatNormal = [], cubeGNormal = [], sphereFlatNormal = [], sphereGNormal = [], fileFlatNormal = [], fileGNormal = [];
+let sphereBB = [], cubeBB = [], fileBB = [];
 
 let gl;
 let va = vec4(0.0, 0.0, -1.0,1);
