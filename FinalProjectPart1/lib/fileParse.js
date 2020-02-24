@@ -6,8 +6,8 @@ function parseFile(evt){
     }
     let f = files[0];
 
-    pointsArray = [];
-    faceArray = [];
+    let pointsArray = [];
+    fileFaces = [];
     let reader = new FileReader();
     reader.onload = (function(theFile) {
         return function(e) {
@@ -38,12 +38,12 @@ function parseFile(evt){
                 i++;
             }
             i++; //increment to line just after end_header
-            let left = Number.MAX_VALUE;
-            let right = Number.MIN_VALUE;
-            let top = Number.MIN_VALUE;
-            let bottom = Number.MAX_VALUE;
-            let minZ = Number.MAX_VALUE;
-            let maxZ = Number.MIN_VALUE; //initialize extents to easily-overridden values
+            let left = vec4(Number.MAX_VALUE, 0.0, 0.0, 0.0);
+            let right = vec4(Number.MIN_VALUE, 0.0, 0.0, 0.0);
+            let top = vec4(0.0, Number.MIN_VALUE, 0.0, 0.0);
+            let bottom = vec4(0.0, Number.MAX_VALUE, 0.0, 0.0);
+            let minZ = vec4(0.0, 0.0, Number.MAX_VALUE, 0.0);
+            let maxZ = vec4(0.0, 0.0, Number.MIN_VALUE, 0.0); //initialize extents to easily-overridden values
 
             let j = 0;
             for(j = 0; j < numVerts; j++){ //for each vertex
@@ -57,30 +57,35 @@ function parseFile(evt){
                 let x = parseFloat(points[0]);
                 let y = parseFloat(points[1]);
                 let z = parseFloat(points[2]);
+                let thisPoint = vec4(x, y, z, 1.0);
 
-                if(x < left){ //if x is further left
-                    left = x;
+                if(x < left[0]){ //if x is further left
+                    left = thisPoint;
                 }
-                if(x > right){ //if x is further right
-                    right = x;
+                if(x > right[0]){ //if x is further right
+                    right = thisPoint;
                 }
-                if(y < bottom){ //if y is lower
-                    bottom = y;
+                if(y < bottom[1]){ //if y is lower
+                    bottom = thisPoint;
                 }
-                if(y > top){ //if y is higher
-                    top = y;
+                if(y > top[1]){ //if y is higher
+                    top = thisPoint;
                 }
-                if(z < minZ){ //if Z is further
-                    minZ = z;
+                if(z < minZ[2]){ //if Z is further
+                    minZ = thisPoint;
                 }
-                if(z > maxZ){ //if Z is closer
-                    maxZ = z;
+                if(z > maxZ[2]){ //if Z is closer
+                    maxZ = thisPoint;
                 }
-                pointsArray.push(vec4(x, y, z, 1.0));
+                pointsArray.push(thisPoint);
                 i++;
             }
             console.log(left, right, top, bottom, minZ, maxZ);
-            normalArray = [];
+            let divisor = Math.max(right[0]-left[0], top[1]-bottom[1], maxZ[2]-minZ[2]) / 2;
+            console.log(divisor);
+            let shiftX = (-(right[0] - (right[0]-left[0])/2))/divisor;
+            let shiftY = (-(top[1] - (top[1]-bottom[1])/2))/divisor;
+            let shiftZ = (-(maxZ[2] - (maxZ[2]-minZ[2])/2))/divisor;
             for(j = 0; j < numFaces; j++){ //for each face
                 while(contents[i].replace(/\s+/, "") === ""){ //ignore empty lines
                     i++;
@@ -91,60 +96,21 @@ function parseFile(evt){
                 }
                 let vertLen = parseInt(verts[0]); //parse # vertices
                 verts.shift();
-                let thisFace = [];
-                let nx = 0, ny = 0, nz = 0, xavg = 0, yavg = 0, zavg = 0;
 
                 for(let k = 0; k < vertLen; k++){ //for # of vertices
-                    thisFace.push(pointsArray[verts[k]]); //push relevant vertex
-                    xavg += pointsArray[verts[k]][0]; //calculate avg x value
-                    yavg += pointsArray[verts[k]][1]; //calculate avg y value
-                    zavg += pointsArray[verts[k]][2]; //calculate avg z value
-                    nx += (pointsArray[verts[k]][1] - pointsArray[verts[(k+1)%vertLen]][1])*(pointsArray[verts[k]][2] + pointsArray[verts[(k+1)%vertLen]][2]); //newell method for X
-                    ny += (pointsArray[verts[k]][2] - pointsArray[verts[(k+1)%vertLen]][2])*(pointsArray[verts[k]][0] + pointsArray[verts[(k+1)%vertLen]][0]); //newell method for Y
-                    nz += (pointsArray[verts[k]][0] - pointsArray[verts[(k+1)%vertLen]][0])*(pointsArray[verts[k]][1] + pointsArray[verts[(k+1)%vertLen]][1]); //newell method for Z
+                    let currVert = pointsArray[verts[k]];
+                    fileFaces.push(vec4(currVert[0]/divisor + shiftX, currVert[1]/divisor + shiftY, currVert[2]/divisor + shiftZ, 1.0)); //push relevant vertex
                 }
-                xavg /= vertLen; //get avg x
-                yavg /= vertLen; //get avg y
-                zavg /= vertLen; //get avg z
-                let nlength = Math.sqrt(Math.pow(nx, 2) + Math.pow(ny, 2) + Math.pow(nz, 2)); //get normal vector magnitude
-                if((right-left) > (top-bottom)){ //if aspect < 1
-                    nx /= nlength/(0.1*(top-bottom)); //set normals to be function of height
-                    ny /= nlength/(0.1*(top-bottom));
-                    nz /= nlength/(0.1*(top-bottom));
-                } else {
-                    nx /= nlength/(0.1*(right-left)); //set normals to be function of width
-                    ny /= nlength/(0.1*(right-left));
-                    nz /= nlength/(0.1*(right-left));
-                } //this if/else block simply standardizes the height of the normal vectors
-
-                normalArray.push([vec4(xavg, yavg, zavg, 1.0), vec4(nx+xavg, ny+yavg, nz+zavg, 1.0)]); //push line representing this face's normal
-                faceArray.push(thisFace); //push face to face array
                 i++;
             }
-
-            let offsetZ = 10; //set default distance from mesh
-            let aspect = (right-left)/(top-bottom); //calculate aspect ratio
-            if(aspect < 0.9 || (right - left) > 100 || (top-bottom) > 100){ //if height > width or coordinates in the hundreds
-                offsetZ = 1000; //Increase the distance to the mesh
+            fileUploaded = true;
+            if(shapeArray.length === 3){
+                shapeArray.pop();
             }
-            let theta = (Math.atan((Math.max(right-left, top-bottom)/2)/offsetZ) * (180/Math.PI))*2; //calculate fovY
-
-            projMatrix = perspective(theta, 1, 0.1, 1000+offsetZ+100*(maxZ-minZ)); //set perspective matrix, increase drawing depth
-
-            let eye = vec3(right-((right-left)/2), top-((top-bottom)/2), maxZ + offsetZ + 10);
-            let at = vec3(right-((right-left)/2), top-((top-bottom)/2), maxZ); //set at to center on object
-            let up = vec3(0.0, 1.0, 0.0); //up
-            let viewMatrix = lookAt(eye, at, up); //set view matrix
-
-            let viewMatrixLoc = gl.getUniformLocation(program, 'viewMatrix');
-            gl.uniformMatrix4fv(viewMatrixLoc, false, flatten(viewMatrix)); //load in view matrix
-
-            across = right-left; //set global translation variables
-            tall = top-bottom; //these make translating a function of dimensions rather than hardcoded values
-            deep = maxZ-minZ;
-
-            reset(); //reset transformation variables
-            makeDrawing();
+            shapeArray.push(fileFaces);
+            fileFlatNormal = fNormals(shapeArray[2]);
+            fileGNormal = gNormals(shapeArray[2]);
+            generateLines();
         };
     })(f);
     reader.readAsDataURL(f);

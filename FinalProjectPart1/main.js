@@ -1,6 +1,6 @@
 
-let shapeArray = [], colorArray = [], pointsArray = [], linesArray = [];
-let cubeFlatNormal = [], cubeGNormal = [], sphereFlatNormal = [], sphereGNormal = [];
+let shapeArray = [], colorArray = [], sphereArray = [], linesArray = [], fileFaces = [];
+let cubeFlatNormal = [], cubeGNormal = [], sphereFlatNormal = [], sphereGNormal = [], fileFlatNormal = [], fileGNormal = [];
 
 let gl;
 let va = vec4(0.0, 0.0, -1.0,1);
@@ -77,14 +77,15 @@ function main()
     cubeFlatNormal = fNormals(shapeArray[0]);
     cubeGNormal = gNormals(shapeArray[0]);
 
-    shapeArray.push(pointsArray);
+    shapeArray.push(sphereArray);
     colorArray.push(vec4(1.0, 0.0, 1.0, 1.0)); //magenta sphere
     colorArray.push(vec4(1.0, 1.0, 0.0, 1.0)); //yellow sphere
     colorArray.push(vec4(0.0, 1.0, 1.0, 1.0)); //cyan sphere
     sphereFlatNormal = fNormals(shapeArray[1]);
-    sphereGNormal = fNormals(shapeArray[1]);
+    sphereGNormal = gNormals(shapeArray[1]);
 
     colorArray.push(vec4(1.0, 1.0, 1.0, 1.0)); //White Lines
+    colorArray.push(vec4(1.0, 1.0, 1.0, 1.0));
 
     generateLines();
 
@@ -156,6 +157,9 @@ function main()
         }
     };
 
+    let fileInput = document.getElementById("custFile");
+    fileInput.addEventListener("change", parseFile); //add event listener to the file upload button
+
     render();
 }
 
@@ -221,10 +225,12 @@ function generateLines(){
     linesArray[6].push(RL);
     linesArray[6].push(centerRL);
 
-    /*linesArray.push([]); //right vertical -> right
-    linesArray[7].push(RSplit);
-    linesArray[7].push(RR);
-    linesArray[7].push(centerRR);*/
+    if(fileUploaded){
+        linesArray.push([]); //right vertical -> right
+        linesArray[7].push(RSplit);
+        linesArray[7].push(RR);
+        linesArray[7].push(centerRR);
+    }
 }
 
 function render()
@@ -284,8 +290,9 @@ function render()
         if(fileUploaded){ //for custom uploaded .ply files
             stack.push(mvMatrix);
                 mvMatrix = mult(mult(mvMatrix, translate(hor2, vert2, 0)), rotateY(theta3));
+                mvMatrix = mult(mvMatrix, translate(0, -sinOffset, 0));
                 gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
-                drawShape(shapeArray[3], colorArray[6], false);
+                drawShape(shapeArray[2], colorArray[7], false, true);
             mvMatrix = stack.pop();
         }
         mvMatrix = stack.pop();
@@ -301,7 +308,9 @@ function render()
 }
 
 function connect(){
-    generateLines();
+    if(enableSin){
+        generateLines();
+    }
     for(let i = 0; i < linesArray.length; i++) {
         let diffuseProduct = mult(lightDiffuse, colorArray[6]);
         gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
@@ -347,7 +356,22 @@ function connect(){
 }
 
 function drawShape(shape, color, isCube) {
-    if(isCube){
+    if(arguments.length === 4){
+        if(useFlat){
+            var vNormal = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
+            gl.bufferData(gl.ARRAY_BUFFER, flatten(fileFlatNormal), gl.STREAM_DRAW);
+        } else {
+            var vNormal = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
+            gl.bufferData(gl.ARRAY_BUFFER, flatten(fileGNormal), gl.STREAM_DRAW);
+        }
+
+        var vNormalPosition = gl.getAttribLocation( program, "vNormal");
+        gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(vNormalPosition);
+    }
+    else if(isCube){
         if(useFlat){
             var vNormal = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
@@ -379,8 +403,6 @@ function drawShape(shape, color, isCube) {
 
     let diffuseProduct = mult(lightDiffuse, color);
     gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
-    
-    let fragColors = [];
 
     let pBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
@@ -389,10 +411,6 @@ function drawShape(shape, color, isCube) {
     let vPosition = gl.getAttribLocation(program,  "vPosition");
     gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
-
-    let cBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(fragColors), gl.STREAM_DRAW);
 
     gl.drawArrays( gl.TRIANGLES, 0, shape.length );
 
@@ -438,9 +456,9 @@ function triangle(a, b, c) {
 
 
 
-    pointsArray.push(a);
-    pointsArray.push(b);
-    pointsArray.push(c);
+    sphereArray.push(a);
+    sphereArray.push(b);
+    sphereArray.push(c);
 
     // normals are vectors
 
@@ -476,10 +494,10 @@ function tetrahedron(a, b, c, d, n) {
     divideTriangle(a, d, b, n);
     divideTriangle(a, c, d, n);
 }
+
 function gNormals(shape) {
     let normals = [];
     for (let i = 0; i < shape.length; i++) {
-
         normals.push( vec4( shape[i][0],
             shape[i][1],
             shape[i][2],
@@ -510,16 +528,13 @@ function doNewell(intersect){
     let nx = 0;
     let ny = 0;
     let nz = 0;
-
     let current;
     let next;
-
     let i;
 
     for (i = 0; i < intersect.length; i++) {
         current = vec4(intersect[i % intersect.length]);
         next = vec4(intersect[(i + 1) % intersect.length]);
-
         nx += (current[1]-next[1])*(current[2]+next[2]);
         ny += (current[2]-next[2])*(current[0]+next[0]);
         nz += (current[0]-next[0])*(current[1]+next[1]);

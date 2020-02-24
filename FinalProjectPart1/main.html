@@ -55,6 +55,7 @@
     <script src="lib/webgl-utils.js"></script>
     <script src="lib/initShaders.js"></script>
     <script src="lib/MV.js"></script>
+    <script src="lib/fileParse.js"></script>
 
     <script src="main.js"></script>
 
@@ -67,7 +68,9 @@
     <canvas id="webgl" width="400" height="400" style="border: 1px solid black;">
         Please use a browser that supports the "canvas" tag.
     </canvas>
-
+    <form id="fileInput">
+        <input type="file" id="custFile" name="custFile" accept=".ply">
+    </form>
 </div>
 <div style="text-align: center">
     <p>Press i to decrease the spotlight angle, p to increase the spotlight angle, m to enable Gouraud shading, n to enable flat shading</p>
