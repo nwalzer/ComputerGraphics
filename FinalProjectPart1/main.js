@@ -26,8 +26,8 @@ let program;
 
 let mvMatrix, pMatrix;
 let modelView, projection;
-let fileUploaded = false, useFlat = true;
-let theta = 0, theta2 = 0, theta3 = 0;
+let fileUploaded = false, useFlat = true, enableSin = false;
+let theta = 0, theta2 = 0, theta3 = 0, sinOffset = 0, sinTheta = 0;
 let hor = 5, hor2 = 2, vert = 1, vert2 = -5, topVert = 5;
 const eye = vec3(0.0, 0.0, 22);
 const at = vec3(0.0, 0.0, 0.0);
@@ -78,9 +78,9 @@ function main()
     cubeGNormal = gNormals(shapeArray[0]);
 
     shapeArray.push(pointsArray);
-    colorArray.push(vec4(1.0, 0.0, 0.0, 1.0)); //red sphere
-    colorArray.push(vec4(0.0, 1.0, 0.0, 1.0)); //green sphere
-    colorArray.push(vec4(0.0, 0.0, 1.0, 1.0)); //blue sphere
+    colorArray.push(vec4(1.0, 0.0, 1.0, 1.0)); //magenta sphere
+    colorArray.push(vec4(1.0, 1.0, 0.0, 1.0)); //yellow sphere
+    colorArray.push(vec4(0.0, 1.0, 1.0, 1.0)); //cyan sphere
     sphereFlatNormal = fNormals(shapeArray[1]);
     sphereGNormal = fNormals(shapeArray[1]);
 
@@ -121,41 +121,51 @@ function main()
                 break;
             case 'm':
                 useFlat = false;
+                var shadeType = document.getElementById("shadeType");
+                shadeType.innerText = "You are currently using Gouraud Shading";
                 break;
             case 'n':
                 useFlat = true;
+                var shadeType = document.getElementById("shadeType");
+                shadeType.innerText = "You are currently using Flat Shading";
                 break;
             case 'Shift':
                 shiftPressed = true;
                 break;
             case 'w':
-                lightDirection[1] += 0.1;
-                gl.uniform3fv(gl.getUniformLocation(program, "lightDirection"), flatten(lightDirection));
-                break;
-            case 'a':
-                lightDirection[0] -= 0.1;
-                gl.uniform3fv(gl.getUniformLocation(program, "lightDirection"), flatten(lightDirection));
-                break;
-            case 'd':
-                lightDirection[0] += 0.1;
-                gl.uniform3fv(gl.getUniformLocation(program, "lightDirection"), flatten(lightDirection));
+                updateLightDir(0.0, 0.1, 0.0);
                 break;
             case 's':
-                lightDirection[1] -= 0.1;
-                gl.uniform3fv(gl.getUniformLocation(program, "lightDirection"), flatten(lightDirection));
+                updateLightDir(0.0, -0.1, 0.0);
+                break;
+            case 'a':
+                updateLightDir(-0.1, 0, 0.0);
+                break;
+            case 'd':
+                updateLightDir(0.1, 0, 0.0);
                 break;
             case 'q':
-                lightDirection[2] += 0.1;
-                gl.uniform3fv(gl.getUniformLocation(program, "lightDirection"), flatten(lightDirection));
+                updateLightDir(0, 0, 0.1);
                 break;
             case 'e':
-                lightDirection[2] -= 0.1;
-                gl.uniform3fv(gl.getUniformLocation(program, "lightDirection"), flatten(lightDirection));
+                updateLightDir(0, 0, -0.1);
+                break;
+            case 'b':
+                enableSin = !enableSin;
                 break;
         }
     };
 
     render();
+}
+
+function updateLightDir(x, y, z){
+    lightDirection[0] += x;
+    lightDirection[1] += y;
+    lightDirection[2] += z;
+    var lightDir = document.getElementById("lightDir");
+    lightDir.innerText = "The light is pointing at: (" + lightDirection[0] + ", " + lightDirection[1] + ", " + lightDirection[2] + ")";
+    gl.uniform3fv(gl.getUniformLocation(program, "lightDirection"), flatten(lightDirection));
 }
 
 function generateLines(){
@@ -168,16 +178,16 @@ function generateLines(){
     let botL = vec4(hor, vert-1, 0.0, 1.0);
     let LSplit = vec4(hor, -2, 0.0, 1.0);
     let LL = vec4(hor+hor2, -2, 0.0, 1.0); //left branch of left branch
-    let centerLL = vec4(hor+hor2, vert2+2, 0.0, 1.0);
+    let centerLL = vec4(hor+hor2, vert2+2-sinOffset, 0.0, 1.0); //magenta sphere
     let LR = vec4(hor-hor2, -2, 0.0, 1.0); //right branch of left branch
-    let centerLR = vec4(hor-hor2, vert2+1, 0.0, 1.0);
+    let centerLR = vec4(hor-hor2, vert2+1+sinOffset, 0.0, 1.0); //green cube
 
     let R = vec4(-hor, topVert - (topVert - vert)/2, 0.0, 1.0);
     let RSplit = vec4(-hor, -2, 0.0, 1.0);
     let RL = vec4(-hor-hor2, -2, 0.0, 1.0);
-    let centerRL = vec4(-hor-hor2, vert2+2, 0.0, 1.0);
+    let centerRL = vec4(-hor-hor2, vert2+2+sinOffset, 0.0, 1.0); //cyan sphere
     let RR = vec4(-hor+hor2, -2, 0.0, 1.0);
-    let centerRR = vec4(-hor+hor2, vert2+1, 0.0, 1.0);
+    let centerRR = vec4(-hor+hor2, vert2+1-sinOffset, 0.0, 1.0);
 
     linesArray.push([]); //top vertical
     linesArray[0].push(topmost);
@@ -227,36 +237,49 @@ function render()
     theta3 += 4;
     theta3 = theta3 % 360;
 
+    if(enableSin){
+        sinTheta += 0.5;
+        sinTheta = sinTheta % 360;
+        sinOffset = Math.sin(sinTheta * (Math.PI/90));
+    }
+
     mvMatrix = lookAt(eye, at , up);
 
     stack.push(mvMatrix);
     mvMatrix = mult(mvMatrix, rotateY(theta)); //rotation at top level
     gl.uniformMatrix4fv( modelView, false, flatten(mult(translate(0, 5, 0), mvMatrix)));
-    drawShape(shapeArray[0], colorArray[0], true);
+    drawShape(shapeArray[0], colorArray[0], true); //level 1 cube (root)
 
+    stack.push(mvMatrix);
     stack.push(mvMatrix);
         mvMatrix = mult(mult(mvMatrix, translate(hor, vert, 0)), rotateY(theta2));
         stack.push(mvMatrix);
             mvMatrix = mult(mult(mvMatrix, translate(hor2, vert2, 0)), rotateY(theta3));
+            mvMatrix = mult(mvMatrix, translate(0, -sinOffset, 0));
             gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
-            drawShape(shapeArray[1], colorArray[3], false);
+            drawShape(shapeArray[1], colorArray[3], false); //level 3 sphere
         mvMatrix = stack.pop();
         stack.push(mvMatrix);
             mvMatrix = mult(mult(mvMatrix, translate(-hor2, vert2, 0)), rotateY(theta3));
+            mvMatrix = mult(mvMatrix, translate(0, sinOffset, 0));
             gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
-            drawShape(shapeArray[0], colorArray[1], true);
+            drawShape(shapeArray[0], colorArray[1], true); //level 3 cube
         mvMatrix = stack.pop();
+        mvMatrix = stack.pop();
+        mvMatrix = mult(mult(mvMatrix, translate(hor, vert, 0)), rotateY(-theta2));
         gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
-        drawShape(shapeArray[1], colorArray[4], false);
+        drawShape(shapeArray[1], colorArray[4], false); //level 2 sphere
     mvMatrix = stack.pop();
 
 
     stack.push(mvMatrix);
+    stack.push(mvMatrix);
         mvMatrix = mult(mult(mvMatrix, translate(-hor, vert, 0)), rotateY(theta2));
         stack.push(mvMatrix);
             mvMatrix = mult(mult(mvMatrix, translate(-hor2, vert2, 0)), rotateY(theta3));
+            mvMatrix = mult(mvMatrix, translate(0, sinOffset, 0));
             gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
-            drawShape(shapeArray[1], colorArray[5], false);
+            drawShape(shapeArray[1], colorArray[5], false); //level 3 sphere
         mvMatrix = stack.pop();
         if(fileUploaded){ //for custom uploaded .ply files
             stack.push(mvMatrix);
@@ -265,6 +288,8 @@ function render()
                 drawShape(shapeArray[3], colorArray[6], false);
             mvMatrix = stack.pop();
         }
+        mvMatrix = stack.pop();
+        mvMatrix = mult(mult(mvMatrix, translate(-hor, vert, 0)), rotateY(-theta2));
         gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
         drawShape(shapeArray[0], colorArray[2], true);
     mvMatrix = stack.pop();
@@ -276,6 +301,7 @@ function render()
 }
 
 function connect(){
+    generateLines();
     for(let i = 0; i < linesArray.length; i++) {
         let diffuseProduct = mult(lightDiffuse, colorArray[6]);
         gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
