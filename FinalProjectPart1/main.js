@@ -1,5 +1,5 @@
 
-let shapeArray = [], colorArray = [], pointsArray = [], normalsArray = [], cubeNormalArray = [], linesArray = [];
+let shapeArray = [], colorArray = [], pointsArray = [], linesArray = [];
 let cubeFlatNormal = [], cubeGNormal = [], sphereFlatNormal = [], sphereGNormal = [];
 
 let gl;
@@ -11,14 +11,14 @@ let numTimesToSubdivide = 5;
 let index = 0;
 
 let lightPosition = vec4(7.0, 3.0, 3.0, 1.0 );
+let lightDirection = vec3(-1, 0, -5);
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 
 var materialAmbient = vec4( 1.0, 1.0, 1.0, 1.0 );
-var materialDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
-var materialShininess = 100.0;
+var materialShininess = 20.0;
 var angle = 0.9;
 
 let fovy = 45.0;  // Field-of-view in Y direction angle (in degrees)
@@ -26,10 +26,10 @@ let program;
 
 let mvMatrix, pMatrix;
 let modelView, projection;
-let fileUploaded = false;
+let fileUploaded = false, useFlat = true;
 let theta = 0, theta2 = 0, theta3 = 0;
 let hor = 5, hor2 = 2, vert = 1, vert2 = -5, topVert = 5;
-const eye = vec3(0.0, 0.0, 20);
+const eye = vec3(0.0, 0.0, 22);
 const at = vec3(0.0, 0.0, 0.0);
 const up = vec3(0.0, 1.0, 0.0);
 
@@ -55,7 +55,7 @@ function main()
     gl.useProgram(program);
 
     //Set up the viewport
-    gl.viewport( 0, 0, 400, 400);
+    gl.viewport( 0, 0, canvas.width, canvas.height);
 
     // Set clear color
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -86,7 +86,6 @@ function main()
 
     colorArray.push(vec4(1.0, 1.0, 1.0, 1.0)); //White Lines
 
-    initCubeNormals();
     generateLines();
 
     projection = gl.getUniformLocation(program, "projectionMatrix");
@@ -95,45 +94,68 @@ function main()
     pMatrix = perspective(fovy, 1, .1, 100);
     gl.uniformMatrix4fv( projection, false, flatten(pMatrix) );
 
-    var diffuseProduct = mult(lightDiffuse, materialDiffuse);
-    var specularProduct = mult(lightSpecular, materialSpecular);
-    var ambientProduct = mult(lightAmbient, materialAmbient);
-    console.log(diffuseProduct, specularProduct, ambientProduct);
+    let specularProduct = mult(lightSpecular, materialSpecular);
+    let ambientProduct = mult(lightAmbient, materialAmbient);
 
-    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+    gl.uniform3fv(gl.getUniformLocation(program, "lightDirection"), flatten(lightDirection));
     gl.uniform4fv(gl.getUniformLocation(program, "specularProduct"), flatten(specularProduct));
     gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"), flatten(ambientProduct));
     gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
     gl.uniform1f(gl.getUniformLocation(program, "shininess"), materialShininess);
     gl.uniform1f(gl.getUniformLocation(program, "angle"), angle);
-    console.log(ambientProduct);
+
+    window.onkeydown = function(event) {
+        let key = event.key;
+        switch(key){
+            case 'p':
+                if(angle > 0){
+                    angle -= 0.01;
+                }
+                gl.uniform1f(gl.getUniformLocation(program, "angle"), angle);
+                break;
+            case 'i':
+                if(angle < 1){
+                    angle += 0.01;
+                }
+                gl.uniform1f(gl.getUniformLocation(program, "angle"), angle);
+                break;
+            case 'm':
+                useFlat = false;
+                break;
+            case 'n':
+                useFlat = true;
+                break;
+            case 'Shift':
+                shiftPressed = true;
+                break;
+            case 'w':
+                lightDirection[1] += 0.1;
+                gl.uniform3fv(gl.getUniformLocation(program, "lightDirection"), flatten(lightDirection));
+                break;
+            case 'a':
+                lightDirection[0] -= 0.1;
+                gl.uniform3fv(gl.getUniformLocation(program, "lightDirection"), flatten(lightDirection));
+                break;
+            case 'd':
+                lightDirection[0] += 0.1;
+                gl.uniform3fv(gl.getUniformLocation(program, "lightDirection"), flatten(lightDirection));
+                break;
+            case 's':
+                lightDirection[1] -= 0.1;
+                gl.uniform3fv(gl.getUniformLocation(program, "lightDirection"), flatten(lightDirection));
+                break;
+            case 'q':
+                lightDirection[2] += 0.1;
+                gl.uniform3fv(gl.getUniformLocation(program, "lightDirection"), flatten(lightDirection));
+                break;
+            case 'e':
+                lightDirection[2] -= 0.1;
+                gl.uniform3fv(gl.getUniformLocation(program, "lightDirection"), flatten(lightDirection));
+                break;
+        }
+    };
 
     render();
-}
-
-function initCubeNormals(){
-    //front right bottom top back left
-    let numNorms = 6;
-    for(let i = 0; i < numNorms; i++){ //front
-        cubeNormalArray.push(vec4(0.0, 0.0, 1.0, 1.0));
-    }
-    for(let i = 0; i < numNorms; i++){ //right
-        cubeNormalArray.push(vec4(1.0, 0.0, 0.0, 1.0));
-    }
-    for(let i = 0; i < numNorms; i++){ //bottom
-        cubeNormalArray.push(vec4(0.0, -1.0, 0.0, 1.0));
-    }
-    for(let i = 0; i < numNorms; i++){ //top
-        cubeNormalArray.push(vec4(0.0, 1.0, 0.0, 1.0));
-    }
-    for(let i = 0; i < numNorms; i++){ //back
-        cubeNormalArray.push(vec4(0.0, 0.0, -1.0, 1.0));
-    }
-    for(let i = 0; i < numNorms; i++){ //left
-        cubeNormalArray.push(vec4(-1.0, 0.0, 0.0, 1.0));
-    }
-    console.log(cube());
-    console.log(cubeNormalArray);
 }
 
 function generateLines(){
@@ -142,16 +164,18 @@ function generateLines(){
     let firstSplit = vec4(0.0, topVert - (topVert - vert)/2, 0.0, 1.0);
 
     let L = vec4(hor, topVert - (topVert - vert)/2, 0.0, 1.0); //left branch
+    let topL = vec4(hor, vert+1, 0.0, 1.0);
+    let botL = vec4(hor, vert-1, 0.0, 1.0);
     let LSplit = vec4(hor, -2, 0.0, 1.0);
     let LL = vec4(hor+hor2, -2, 0.0, 1.0); //left branch of left branch
-    let centerLL = vec4(hor+hor2, vert2+1, 0.0, 1.0);
+    let centerLL = vec4(hor+hor2, vert2+2, 0.0, 1.0);
     let LR = vec4(hor-hor2, -2, 0.0, 1.0); //right branch of left branch
     let centerLR = vec4(hor-hor2, vert2+1, 0.0, 1.0);
 
     let R = vec4(-hor, topVert - (topVert - vert)/2, 0.0, 1.0);
     let RSplit = vec4(-hor, -2, 0.0, 1.0);
     let RL = vec4(-hor-hor2, -2, 0.0, 1.0);
-    let centerRL = vec4(-hor-hor2, vert2+1, 0.0, 1.0);
+    let centerRL = vec4(-hor-hor2, vert2+2, 0.0, 1.0);
     let RR = vec4(-hor+hor2, -2, 0.0, 1.0);
     let centerRR = vec4(-hor+hor2, vert2+1, 0.0, 1.0);
 
@@ -165,9 +189,10 @@ function generateLines(){
 
     linesArray.push([]); //left vertical
     linesArray[2].push(L);
-    linesArray[2].push(LSplit);
+    linesArray[2].push(topL);
 
     linesArray.push([]); //left vertical -> right
+    linesArray[3].push(botL);
     linesArray[3].push(LSplit);
     linesArray[3].push(LR);
     linesArray[3].push(centerLR);
@@ -197,7 +222,7 @@ function render()
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     theta += 0.5;
     theta = theta % 360;
-    theta2 -= 2;
+    theta2 -= 2.3;
     theta2 = theta2 % 360;
     theta3 += 4;
     theta3 = theta3 % 360;
@@ -252,6 +277,10 @@ function render()
 
 function connect(){
     for(let i = 0; i < linesArray.length; i++) {
+        let diffuseProduct = mult(lightDiffuse, colorArray[6]);
+        gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+
+        let lineNormal = [];
         if(i > 1){
             stack.push(mvMatrix);
                 let temp = linesArray[i][0];
@@ -259,18 +288,18 @@ function connect(){
                 mvMatrix = mult(mvMatrix, rotateY(theta2));
                 mvMatrix = mult(mvMatrix, translate(-temp[0], 0, -temp[2]));
                 gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
+
+                //this loop tricks the program into thinking the lines are always facing the light source
+                //which ensures the lines remain lit up at all theta values while they are in the spotlight
+                for (let j = 0; j < linesArray[i].length; j++) {
+                    lineNormal.push(mult(inverse4(mvMatrix), lightPosition));
+                }
             mvMatrix = stack.pop();
+        } else {
+            for (let j = 0; j < linesArray[i].length; j++) {
+                lineNormal.push(mult(inverse4(mvMatrix), lightPosition));
+            }
         }
-        let diffuseProduct = mult(lightDiffuse, colorArray[6]);
-        gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
-
-        let fragColors = [];
-        let lineNormal = [];
-
-        for (let j = 0; j < linesArray[i].length; j++) {
-            lineNormal.push(lightPosition);
-        }
-
         var vNormal = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(lineNormal), gl.STREAM_DRAW);
@@ -287,27 +316,35 @@ function connect(){
         gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(vPosition);
 
-        let cBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(fragColors), gl.STREAM_DRAW);
-
         gl.drawArrays(gl.LINE_STRIP, 0, linesArray[i].length);
     }
 }
 
 function drawShape(shape, color, isCube) {
     if(isCube){
-        var vNormal = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(cubeFlatNormal), gl.STREAM_DRAW);
+        if(useFlat){
+            var vNormal = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
+            gl.bufferData(gl.ARRAY_BUFFER, flatten(cubeFlatNormal), gl.STREAM_DRAW);
+        } else {
+            var vNormal = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
+            gl.bufferData(gl.ARRAY_BUFFER, flatten(cubeGNormal), gl.STREAM_DRAW);
+        }
 
         var vNormalPosition = gl.getAttribLocation( program, "vNormal");
         gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(vNormalPosition);
     } else {
-        var vNormal = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(sphereFlatNormal), gl.STREAM_DRAW);
+        if(useFlat){
+            var vNormal = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
+            gl.bufferData(gl.ARRAY_BUFFER, flatten(sphereFlatNormal), gl.STREAM_DRAW);
+        } else {
+            var vNormal = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
+            gl.bufferData(gl.ARRAY_BUFFER, flatten(sphereGNormal), gl.STREAM_DRAW);
+        }
 
         var vNormalPosition = gl.getAttribLocation( program, "vNormal");
         gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
@@ -381,10 +418,6 @@ function triangle(a, b, c) {
 
     // normals are vectors
 
-    normalsArray.push(a[0],a[1], a[2], 0.0);
-    normalsArray.push(b[0],b[1], b[2], 0.0);
-    normalsArray.push(c[0],c[1], c[2], 0.0);
-
     index += 3;
 
 }
@@ -418,15 +451,15 @@ function tetrahedron(a, b, c, d, n) {
     divideTriangle(a, c, d, n);
 }
 function gNormals(shape) {
-    normalsArray = [];
+    let normals = [];
     for (let i = 0; i < shape.length; i++) {
 
-        normalsArray.push( vec4( shape[i][0],
+        normals.push( vec4( shape[i][0],
             shape[i][1],
             shape[i][2],
             0.0));
     }
-    return normalsArray;
+    return normals;
 }
 
 function fNormals(shape){
