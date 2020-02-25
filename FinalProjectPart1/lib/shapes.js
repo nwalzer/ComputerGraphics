@@ -1,0 +1,74 @@
+
+//build cube
+function cube() {
+    let verts = [];
+    verts = verts.concat(quad( 1, 0, 3, 2 )); //front
+    verts = verts.concat(quad( 2, 3, 7, 6 )); //right
+    verts = verts.concat(quad( 3, 0, 4, 7 )); //bottom
+    verts = verts.concat(quad( 6, 5, 1, 2 )); //top
+    verts = verts.concat(quad( 4, 5, 6, 7 )); //back
+    verts = verts.concat(quad( 5, 4, 0, 1 )); //left
+    return verts;
+}
+
+//used for cube building
+function quad(a, b, c, d) {
+    let verts = [];
+
+    let vertices = [
+        vec4( -0.5, -0.5,  0.5, 1.0 ), //bottom left front  0
+        vec4( -0.5,  0.5,  0.5, 1.0 ), //top left front     1
+        vec4(  0.5,  0.5,  0.5, 1.0 ), //top right front    2
+        vec4(  0.5, -0.5,  0.5, 1.0 ), //bottom right front 3
+
+        vec4( -0.5, -0.5, -0.5, 1.0 ), //botton left back   4
+        vec4( -0.5,  0.5, -0.5, 1.0 ), //top left back      5
+        vec4(  0.5,  0.5, -0.5, 1.0 ), //top right back     6
+        vec4(  0.5, -0.5, -0.5, 1.0 )  //bottom right back  7
+    ];
+
+    let indices = [ a, b, c, a, c, d ];
+    for ( let i = 0; i < indices.length; ++i) {
+        verts.push( vertices[indices[i]] );
+    }
+
+    return verts;
+}
+
+//used for sphere generation
+function divideTriangle(a, b, c, count) {
+    if ( count > 0 ) {
+
+        let ab = mix( a, b, 0.5);
+        let ac = mix( a, c, 0.5);
+        let bc = mix( b, c, 0.5);
+
+        ab = normalize(ab, true);
+        ac = normalize(ac, true);
+        bc = normalize(bc, true);
+
+        divideTriangle( a, ab, ac, count - 1 );
+        divideTriangle( ab, b, bc, count - 1 );
+        divideTriangle( bc, c, ac, count - 1 );
+        divideTriangle( ab, bc, ac, count - 1 );
+    }
+    else {
+        sphereArray.push(a);
+        sphereArray.push(b);
+        sphereArray.push(c);
+
+        //Gouraud normals calculated once during generation
+        sphereGNormal.push(normalize(vec4(-a[0], -a[1], -a[2], 0.0)));
+        sphereGNormal.push(normalize(vec4(-b[0], -b[1], -b[2], 0.0)));
+        sphereGNormal.push(normalize(vec4(-c[0], -c[1], -c[2], 0.0)));
+        index += 3;
+    }
+}
+
+//used for sphere making
+function tetrahedron(a, b, c, d, n) {
+    divideTriangle(a, b, c, n);
+    divideTriangle(d, c, b, n);
+    divideTriangle(a, d, b, n);
+    divideTriangle(a, c, d, n);
+}

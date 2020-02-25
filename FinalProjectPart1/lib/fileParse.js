@@ -29,11 +29,9 @@ function parseFile(evt){
                 if(contents[i].indexOf("element vertex") !== -1){ //if this line indicates # vertices
                     let idx = contents[i].indexOf("element vertex");
                     numVerts = parseInt(contents[i].substring(idx+14)); //parse # of vertices
-                    console.log("VERTS: " + numVerts);
                 } else if(contents[i].indexOf("element face") !== -1){ //if this line indicates # of faces
                     let idx = contents[i].indexOf("element face");
                     numFaces = parseInt(contents[i].substring(idx+12)); //parse # of faces
-                    console.log("FACES: " + numFaces)
                 }
                 i++;
             }
@@ -80,12 +78,11 @@ function parseFile(evt){
                 pointsArray.push(thisPoint);
                 i++;
             }
-            console.log(left, right, top, bottom, minZ, maxZ);
-            let divisor = Math.max(right[0]-left[0], top[1]-bottom[1], maxZ[2]-minZ[2]) / 2;
-            console.log(divisor);
-            let shiftX = (-(right[0] - (right[0]-left[0])/2))/divisor;
-            let shiftY = (-(top[1] - (top[1]-bottom[1])/2))/divisor;
-            let shiftZ = (-(maxZ[2] - (maxZ[2]-minZ[2])/2))/divisor;
+
+            let divisor = Math.max(right[0]-left[0], top[1]-bottom[1], maxZ[2]-minZ[2]) / 2; //calculate largest dimension
+            let shiftX = (-(right[0] - (right[0]-left[0])/2))/divisor; //X axis translation to center at origin
+            let shiftY = (-(top[1] - (top[1]-bottom[1])/2))/divisor; //Y axis translation to center at origin
+            let shiftZ = (-(maxZ[2] - (maxZ[2]-minZ[2])/2))/divisor; //Z axis translation to center at origin
             for(j = 0; j < numFaces; j++){ //for each face
                 while(contents[i].replace(/\s+/, "") === ""){ //ignore empty lines
                     i++;
@@ -99,7 +96,8 @@ function parseFile(evt){
 
                 for(let k = 0; k < vertLen; k++){ //for # of vertices
                     let currVert = pointsArray[verts[k]];
-                    fileFaces.push(vec4(currVert[0]/divisor + shiftX, currVert[1]/divisor + shiftY, currVert[2]/divisor + shiftZ, 1.0)); //push relevant vertex
+                    fileFaces.push(vec4(currVert[0]/divisor + shiftX, currVert[1]/divisor + shiftY, currVert[2]/divisor + shiftZ, 1.0));
+                    //shift vertex so whole object is centered on origin and [-1, 1], push to face
                 }
                 i++;
             }
@@ -151,13 +149,13 @@ function parseFile(evt){
             fileBB[5].push(vec4(rightBB, -topBB, maxZBB)); //bottom right front
 
             fileUploaded = true;
-            if(shapeArray.length === 3){
-                shapeArray.pop();
+            if(shapeArray.length === 3){ //if another file is already loaded
+                shapeArray.pop(); //get rid of it
             }
-            shapeArray.push(fileFaces);
-            fileFlatNormal = fNormals(shapeArray[2]);
-            fileGNormal = gNormals(shapeArray[2]);
-            generateLines();
+            shapeArray.push(fileFaces); //push this file to shape array
+            fileFlatNormal = fNormals(shapeArray[2]); //calculate flat normals
+            fileGNormal = gNormals(shapeArray[2]); //calculate gouraud normals
+            generateLines(); //regenerate lines to account fo new bounding box
         };
     })(f);
     reader.readAsDataURL(f);

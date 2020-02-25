@@ -85,14 +85,14 @@ function main()
     sphereFlatNormal = fNormals(shapeArray[1]); //calculate sphere flat normals
 
     colorArray.push(vec4(1.0, 1.0, 1.0, 1.0)); //White Lines
-    colorArray.push(vec4(1.0, 0.4, 0.0, 1.0)); //file color
+    colorArray.push(vec4(1.0, 0.4, 0.0, 1.0)); //orange file color
 
     generateLines(); //generate the lines that will connect all of the models together
 
     projection = gl.getUniformLocation(program, "projectionMatrix");
     modelView = gl.getUniformLocation(program, "modelMatrix");
 
-    pMatrix = perspective(fovy, 1, .1, 100);
+    pMatrix = perspective(fovy, 1, .1, 100); //perspective calculation
     gl.uniformMatrix4fv( projection, false, flatten(pMatrix) );
 
     let specularProduct = mult(lightSpecular, materialSpecular);
@@ -109,50 +109,47 @@ function main()
         let key = event.key;
         switch(key){
             case 'p':
-                if(angle > 0){
+                if(angle > 0){ //increase angle
                     angle -= 0.01;
                 }
                 gl.uniform1f(gl.getUniformLocation(program, "angle"), angle);
                 break;
             case 'i':
-                if(angle < 1){
+                if(angle < 1){ //decrease angle
                     angle += 0.01;
                 }
                 gl.uniform1f(gl.getUniformLocation(program, "angle"), angle);
                 break;
             case 'm':
-                useFlat = false;
+                useFlat = false; //change to gouraud
                 var shadeType = document.getElementById("shadeType");
                 shadeType.innerText = "You are currently using Gouraud Shading";
                 break;
             case 'n':
-                useFlat = true;
+                useFlat = true; //change to flat
                 var shadeType = document.getElementById("shadeType");
                 shadeType.innerText = "You are currently using Flat Shading";
                 break;
-            case 'Shift':
-                shiftPressed = true;
-                break;
             case 'w':
-                updateLightDir(0.0, 0.1, 0.0);
+                updateLightDir(0.0, 0.1, 0.0); //shift light direction up
                 break;
             case 's':
-                updateLightDir(0.0, -0.1, 0.0);
+                updateLightDir(0.0, -0.1, 0.0); //shift light position down
                 break;
             case 'a':
-                updateLightDir(-0.1, 0, 0.0);
+                updateLightDir(-0.1, 0, 0.0); //shift light position left
                 break;
             case 'd':
-                updateLightDir(0.1, 0, 0.0);
+                updateLightDir(0.1, 0, 0.0); //shift light position right
                 break;
             case 'q':
-                updateLightDir(0, 0, 0.1);
+                updateLightDir(0, 0, 0.1); //shift light position closer
                 break;
             case 'e':
-                updateLightDir(0, 0, -0.1);
+                updateLightDir(0, 0, -0.1); //shift light position further
                 break;
             case 'b':
-                enableSin = !enableSin;
+                enableSin = !enableSin; //toggle sinusoid
                 break;
         }
     };
@@ -163,6 +160,7 @@ function main()
     render();
 }
 
+//Translates light direction by x, y, z
 function updateLightDir(x, y, z){
     lightDirection[0] += x;
     lightDirection[1] += y;
@@ -172,18 +170,19 @@ function updateLightDir(x, y, z){
     gl.uniform3fv(gl.getUniformLocation(program, "lightDirection"), flatten(lightDirection));
 }
 
+//generates lines connecting all of the objects
 function generateLines(){
     linesArray = [];
     let topmost = vec4(0.0, topVert, 0.0, 1.0);
     let firstSplit = vec4(0.0, topVert - (topVert - vert)/2, 0.0, 1.0);
 
-    let L = vec4(hor, topVert - (topVert - vert)/2, 0.0, 1.0); //left branch
-    let topL = vec4(hor, vert+1, 0.0, 1.0);
-    let botL = vec4(hor, vert-1, 0.0, 1.0);
+    let L = vec4(hor, topVert - (topVert - vert)/2, 0.0, 1.0);
+    let topL = vec4(hor, vert+1, 0.0, 1.0); //top of yellow sphere
+    let botL = vec4(hor, vert-1, 0.0, 1.0); //bottom of yellow sphere
     let LSplit = vec4(hor, -2, 0.0, 1.0);
-    let LL = vec4(hor+hor2, -2, 0.0, 1.0); //left branch of left branch
+    let LL = vec4(hor+hor2, -2, 0.0, 1.0);
     let centerLL = vec4(hor+hor2, vert2+2-sinOffset, 0.0, 1.0); //magenta sphere
-    let LR = vec4(hor-hor2, -2, 0.0, 1.0); //right branch of left branch
+    let LR = vec4(hor-hor2, -2, 0.0, 1.0);
     let centerLR = vec4(hor-hor2, vert2+1+sinOffset, 0.0, 1.0); //green cube
 
     let R = vec4(-hor, topVert - (topVert - vert)/2, 0.0, 1.0);
@@ -223,7 +222,7 @@ function generateLines(){
     linesArray[6].push(RL);
     linesArray[6].push(centerRL);
 
-    if(fileUploaded){
+    if(fileUploaded){ //creates lines to connect to bounding box of file
         let RR = vec4(-hor+hor2, -2, 0.0, 1.0);
         let centerRR = vec4(-hor+hor2, vert2+1-sinOffset+fileBB[0][0][1], 0.0, 1.0);
         linesArray.push([]); //right vertical -> right
@@ -233,156 +232,84 @@ function generateLines(){
     }
 }
 
-function render()
-{
+//update drawing
+function render() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     theta += 0.5;
-    theta = theta % 360;
+    theta = theta % 360; //top level rotation
     theta2 -= 2.3;
-    theta2 = theta2 % 360;
+    theta2 = theta2 % 360; //second level rotation
     theta3 += 4;
-    theta3 = theta3 % 360;
+    theta3 = theta3 % 360; //third level rotation
 
-    if(enableSin){
+    if(enableSin){ //if sinusoid enabled
         sinTheta += 0.5;
         sinTheta = sinTheta % 360;
-        sinOffset = Math.sin(sinTheta * (Math.PI/90));
+        sinOffset = Math.sin(sinTheta * (Math.PI/90)); //calculate vertical offset
     }
 
-    mvMatrix = lookAt(eye, at , up);
+    mvMatrix = lookAt(eye, at , up); //calculate model matrix
 
-    stack.push(mvMatrix);
+    stack.push(mvMatrix); //push initial model matrix
     mvMatrix = mult(mvMatrix, rotateY(theta)); //rotation at top level
     gl.uniformMatrix4fv( modelView, false, flatten(mult(translate(0, 5, 0), mvMatrix)));
     drawShape(shapeArray[0], colorArray[0], true); //level 1 cube (root)
 
+    stack.push(mvMatrix); //push two copies
     stack.push(mvMatrix);
-    stack.push(mvMatrix);
-        mvMatrix = mult(mult(mvMatrix, translate(hor, vert, 0)), rotateY(theta2));
+        mvMatrix = mult(mult(mvMatrix, translate(hor, vert, 0)), rotateY(theta2)); //rotate in second level direction
         stack.push(mvMatrix);
-            mvMatrix = mult(mult(mvMatrix, translate(hor2, vert2, 0)), rotateY(theta3));
-            mvMatrix = mult(mvMatrix, translate(0, -sinOffset, 0));
+            mvMatrix = mult(mult(mvMatrix, translate(hor2, vert2, 0)), rotateY(theta3)); //rotate in third level direction
+            mvMatrix = mult(mvMatrix, translate(0, -sinOffset, 0)); //shift by -vertical offset
             gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
             drawShape(shapeArray[1], colorArray[3], false); //level 3 sphere
         mvMatrix = stack.pop();
         stack.push(mvMatrix);
-            mvMatrix = mult(mult(mvMatrix, translate(-hor2, vert2, 0)), rotateY(theta3));
-            mvMatrix = mult(mvMatrix, translate(0, sinOffset, 0));
+            mvMatrix = mult(mult(mvMatrix, translate(-hor2, vert2, 0)), rotateY(theta3)); //rotate in third level direction
+            mvMatrix = mult(mvMatrix, translate(0, sinOffset, 0)); //shift by vertical offset
             gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
             drawShape(shapeArray[0], colorArray[1], true); //level 3 cube
         mvMatrix = stack.pop();
-        mvMatrix = stack.pop();
-        mvMatrix = mult(mult(mvMatrix, translate(hor, vert, 0)), rotateY(-theta2));
+        mvMatrix = stack.pop(); //pop one of the original copies off
+        mvMatrix = mult(mult(mvMatrix, translate(hor, vert, 0)), rotateY(-theta2)); //rotate counter clockwise
         gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
         drawShape(shapeArray[1], colorArray[4], false); //level 2 sphere
     mvMatrix = stack.pop();
 
 
     stack.push(mvMatrix);
-    stack.push(mvMatrix);
-        mvMatrix = mult(mult(mvMatrix, translate(-hor, vert, 0)), rotateY(theta2));
+    stack.push(mvMatrix); //push two copies to stack
+        mvMatrix = mult(mult(mvMatrix, translate(-hor, vert, 0)), rotateY(theta2)); //rotate by second level theta
         stack.push(mvMatrix);
-            mvMatrix = mult(mult(mvMatrix, translate(-hor2, vert2, 0)), rotateY(theta3));
-            mvMatrix = mult(mvMatrix, translate(0, sinOffset, 0));
-            gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
+            mvMatrix = mult(mult(mvMatrix, translate(-hor2, vert2, 0)), rotateY(theta3)); //rotate in third level direction
+            mvMatrix = mult(mvMatrix, translate(0, sinOffset, 0)); //translate by vertical offset
+            gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
             drawShape(shapeArray[1], colorArray[5], false); //level 3 sphere
         mvMatrix = stack.pop();
         if(fileUploaded){ //for custom uploaded .ply files
             stack.push(mvMatrix);
-                mvMatrix = mult(mult(mvMatrix, translate(hor2, vert2, 0)), rotateY(theta3));
-                mvMatrix = mult(mvMatrix, translate(0, -sinOffset, 0));
+                mvMatrix = mult(mult(mvMatrix, translate(hor2, vert2, 0)), rotateY(theta3)); //rotate in third level direction
+                mvMatrix = mult(mvMatrix, translate(0, -sinOffset, 0)); //translate by -vertical offset
                 gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
-                drawShape(shapeArray[2], colorArray[7], false, true);
-                drawBB(fileBB);
+                drawShape(shapeArray[2], colorArray[7], false, true); //draw file
+                drawBB(fileBB); //draw file bounding box
             mvMatrix = stack.pop();
         }
         mvMatrix = stack.pop();
-        mvMatrix = mult(mult(mvMatrix, translate(-hor, vert, 0)), rotateY(-theta2));
+        mvMatrix = mult(mult(mvMatrix, translate(-hor, vert, 0)), rotateY(-theta2)); //rotate counter clockwise
         gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
-        drawShape(shapeArray[0], colorArray[2], true);
+        drawShape(shapeArray[0], colorArray[2], true); //blue cube
     mvMatrix = stack.pop();
 
     gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
 
-    connect();
-    //console.log(sphereFlatNormal);
-    //console.log(sphereGNormal);
+    connect(); //draw lines
     requestAnimationFrame(render)
 }
 
-function cube() {
-    let verts = [];
-    verts = verts.concat(quad( 1, 0, 3, 2 )); //front
-    verts = verts.concat(quad( 2, 3, 7, 6 )); //right
-    verts = verts.concat(quad( 3, 0, 4, 7 )); //bottom
-    verts = verts.concat(quad( 6, 5, 1, 2 )); //top
-    verts = verts.concat(quad( 4, 5, 6, 7 )); //back
-    verts = verts.concat(quad( 5, 4, 0, 1 )); //left
-    return verts;
-}
-
-function quad(a, b, c, d) {
-    let verts = [];
-
-    let vertices = [
-        vec4( -0.5, -0.5,  0.5, 1.0 ), //bottom left front  0
-        vec4( -0.5,  0.5,  0.5, 1.0 ), //top left front     1
-        vec4(  0.5,  0.5,  0.5, 1.0 ), //top right front    2
-        vec4(  0.5, -0.5,  0.5, 1.0 ), //bottom right front 3
-
-        vec4( -0.5, -0.5, -0.5, 1.0 ), //botton left back   4
-        vec4( -0.5,  0.5, -0.5, 1.0 ), //top left back      5
-        vec4(  0.5,  0.5, -0.5, 1.0 ), //top right back     6
-        vec4(  0.5, -0.5, -0.5, 1.0 )  //bottom right back  7
-    ];
-
-    let indices = [ a, b, c, a, c, d ];
-
-    for ( let i = 0; i < indices.length; ++i )
-    {
-        verts.push( vertices[indices[i]] );
-    }
-
-    return verts;
-}
-
-
-function divideTriangle(a, b, c, count) {
-    if ( count > 0 ) {
-
-        let ab = mix( a, b, 0.5);
-        let ac = mix( a, c, 0.5);
-        let bc = mix( b, c, 0.5);
-
-        ab = normalize(ab, true);
-        ac = normalize(ac, true);
-        bc = normalize(bc, true);
-
-        divideTriangle( a, ab, ac, count - 1 );
-        divideTriangle( ab, b, bc, count - 1 );
-        divideTriangle( bc, c, ac, count - 1 );
-        divideTriangle( ab, bc, ac, count - 1 );
-    }
-    else {
-        sphereArray.push(a);
-        sphereArray.push(b);
-        sphereArray.push(c);
-
-        // normals are vectors
-        sphereGNormal.push(normalize(vec4(-a[0], -a[1], -a[2], 0.0)));
-        sphereGNormal.push(normalize(vec4(-b[0], -b[1], -b[2], 0.0)));
-        sphereGNormal.push(normalize(vec4(-c[0], -c[1], -c[2], 0.0)));
-        index += 3;
-    }
-}
-
-function tetrahedron(a, b, c, d, n) {
-    divideTriangle(a, b, c, n);
-    divideTriangle(d, c, b, n);
-    divideTriangle(a, d, b, n);
-    divideTriangle(a, c, d, n);
-}
-
+//calculates Gouraud normals for given shape
+//though it comes out negative for spheres
+//which is why spheres have their own gouraud generation
 function gNormals(shape) {
     let normals = [];
     for (let i = 0; i < shape.length; i++) {
@@ -394,16 +321,13 @@ function gNormals(shape) {
     return normals;
 }
 
+//calculate flat normals
 function fNormals(shape){
     let normals = [];
     for (let i = 0; i < shape.length; i += 3){
-
-        let intersections = [];
-        intersections.push(shape[i]);
-        intersections.push(shape[i+1]);
-        intersections.push(shape[i+2]);
-        let n = doNewell(intersections);
-        normals.push(n);
+        //calculate face normal using newell method
+        let n = doNewell([shape[i], shape[i+1], shape[i+2]]);
+        normals.push(n); //push face normal for each vertex
         normals.push(n);
         normals.push(n);
 
@@ -411,8 +335,8 @@ function fNormals(shape){
     return normals;
 }
 
+//does the newell method for normal calculation
 function doNewell(intersect){
-
     let nx = 0;
     let ny = 0;
     let nz = 0;
@@ -427,6 +351,5 @@ function doNewell(intersect){
         ny += (current[2]-next[2])*(current[0]+next[0]);
         nz += (current[0]-next[0])*(current[1]+next[1]);
     }
-
     return normalize(vec4(nx, ny, nz, 0.0));
 }
