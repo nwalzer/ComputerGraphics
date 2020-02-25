@@ -191,8 +191,6 @@ function generateLines(){
     let RSplit = vec4(-hor, -2, 0.0, 1.0);
     let RL = vec4(-hor-hor2, -2, 0.0, 1.0);
     let centerRL = vec4(-hor-hor2, vert2+2+sinOffset, 0.0, 1.0); //cyan sphere
-    let RR = vec4(-hor+hor2, -2, 0.0, 1.0);
-    let centerRR = vec4(-hor+hor2, vert2+1-sinOffset, 0.0, 1.0);
 
     linesArray.push([]); //top vertical
     linesArray[0].push(topmost);
@@ -227,6 +225,8 @@ function generateLines(){
     linesArray[6].push(centerRL);
 
     if(fileUploaded){
+        let RR = vec4(-hor+hor2, -2, 0.0, 1.0);
+        let centerRR = vec4(-hor+hor2, vert2+1-sinOffset+fileBB[0][0][1], 0.0, 1.0);
         linesArray.push([]); //right vertical -> right
         linesArray[7].push(RSplit);
         linesArray[7].push(RR);
@@ -294,6 +294,7 @@ function render()
                 mvMatrix = mult(mvMatrix, translate(0, -sinOffset, 0));
                 gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
                 drawShape(shapeArray[2], colorArray[7], false, true);
+                drawBB(fileBB);
             mvMatrix = stack.pop();
         }
         mvMatrix = stack.pop();
@@ -415,6 +416,35 @@ function drawShape(shape, color, isCube) {
 
     gl.drawArrays( gl.TRIANGLES, 0, shape.length );
 
+}
+
+function drawBB(box){
+    let diffuseProduct = mult(lightDiffuse, colorArray[6]);
+    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+
+    for(let i = 0; i < box.length; i++){
+        let lineNormal = [];
+        for (let j = 0; j < box[i].length; j++) {
+            lineNormal.push(mult(inverse4(mvMatrix), lightPosition));
+        }
+        var vNormal = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(lineNormal), gl.STREAM_DRAW);
+
+        var vNormalPosition = gl.getAttribLocation( program, "vNormal");
+        gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(vNormalPosition);
+
+        let pBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(box[i]), gl.STREAM_DRAW);
+
+        let vPosition = gl.getAttribLocation(program, "vPosition");
+        gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(vPosition);
+
+        gl.drawArrays(gl.LINE_LOOP, 0, box[i].length);
+    }
 }
 
 function cube() {

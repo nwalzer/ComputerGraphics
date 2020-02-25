@@ -107,7 +107,49 @@ function parseFile(evt){
             let topBB = top[1]/divisor + shiftY;
             let maxZBB = maxZ[2]/divisor + shiftZ;
 
-            //fileBB.push();
+            //back face
+            fileBB = [];
+            fileBB.push([]);
+            fileBB[0].push(vec4(rightBB, topBB, -maxZBB)); //top right back
+            fileBB[0].push(vec4(-rightBB, topBB, -maxZBB)); //top left back
+            fileBB[0].push(vec4(-rightBB, -topBB, -maxZBB)); //bottom left back
+            fileBB[0].push(vec4(rightBB, -topBB, -maxZBB)); //bottom right back
+
+            //top face
+            fileBB.push([]);
+            fileBB[1].push(vec4(rightBB, topBB, -maxZBB)); //top right back
+            fileBB[1].push(vec4(-rightBB, topBB, -maxZBB)); //top right back
+            fileBB[1].push(vec4(-rightBB, topBB, maxZBB)); //top left front
+            fileBB[1].push(vec4(rightBB, topBB, maxZBB)); //top right front
+
+            //right face
+            fileBB.push([]);
+            fileBB[2].push(vec4(rightBB, topBB, -maxZBB)); //top right back
+            fileBB[2].push(vec4(rightBB, topBB, maxZBB)); //top right front
+            fileBB[2].push(vec4(rightBB, -topBB, maxZBB)); //bottom right front
+            fileBB[2].push(vec4(rightBB, -topBB, -maxZBB)); //bottom right back
+
+            //bottom face
+            fileBB.push([]);
+            fileBB[3].push(vec4(rightBB, -topBB, -maxZBB)); //bottom right back
+            fileBB[3].push(vec4(rightBB, -topBB, maxZBB)); //bottom right front
+            fileBB[3].push(vec4(-rightBB, -topBB, maxZBB)); //bottom left front
+            fileBB[3].push(vec4(-rightBB, -topBB, -maxZBB)); //bottom left back
+
+            //left face
+            fileBB.push([]);
+            fileBB[4].push(vec4(-rightBB, topBB, -maxZBB)); //top left back
+            fileBB[4].push(vec4(-rightBB, topBB, maxZBB)); //top left front
+            fileBB[4].push(vec4(-rightBB, -topBB, maxZBB)); //bottom left front
+            fileBB[4].push(vec4(-rightBB, -topBB, -maxZBB)); //bottom left back
+
+            //front face
+            fileBB.push([]);
+            fileBB[5].push(vec4(rightBB, topBB, maxZBB)); //top right front
+            fileBB[5].push(vec4(-rightBB, topBB, maxZBB)); //top left front
+            fileBB[5].push(vec4(-rightBB, -topBB, maxZBB)); //bottom left front
+            fileBB[5].push(vec4(rightBB, -topBB, maxZBB)); //bottom right front
+
             fileUploaded = true;
             if(shapeArray.length === 3){
                 shapeArray.pop();
