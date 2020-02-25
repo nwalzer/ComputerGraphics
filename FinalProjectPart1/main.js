@@ -75,20 +75,19 @@ function main()
     colorArray.push(vec4(1.0, 0.0, 0.0, 1.0)); //red cube
     colorArray.push(vec4(0.0, 1.0, 0.0, 1.0)); //green cube
     colorArray.push(vec4(0.0, 0.0, 1.0, 1.0)); //blue cube
-    cubeFlatNormal = fNormals(shapeArray[0]);
-    cubeGNormal = gNormals(shapeArray[0]);
+    cubeFlatNormal = fNormals(shapeArray[0]); //calculate cube flat normals
+    cubeGNormal = gNormals(shapeArray[0]); //calculate cube gouraud normals
 
     shapeArray.push(sphereArray);
     colorArray.push(vec4(1.0, 0.0, 1.0, 1.0)); //magenta sphere
     colorArray.push(vec4(1.0, 1.0, 0.0, 1.0)); //yellow sphere
     colorArray.push(vec4(0.0, 1.0, 1.0, 1.0)); //cyan sphere
-    sphereFlatNormal = fNormals(shapeArray[1]);
-    sphereGNormal = gNormals(shapeArray[1]);
+    sphereFlatNormal = fNormals(shapeArray[1]); //calculate sphere flat normals
 
     colorArray.push(vec4(1.0, 1.0, 1.0, 1.0)); //White Lines
-    colorArray.push(vec4(1.0, 0.4, 0.0, 1.0));
+    colorArray.push(vec4(1.0, 0.4, 0.0, 1.0)); //file color
 
-    generateLines();
+    generateLines(); //generate the lines that will connect all of the models together
 
     projection = gl.getUniformLocation(program, "projectionMatrix");
     modelView = gl.getUniformLocation(program, "modelMatrix");
@@ -306,145 +305,9 @@ function render()
     gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
 
     connect();
+    //console.log(sphereFlatNormal);
+    //console.log(sphereGNormal);
     requestAnimationFrame(render)
-}
-
-function connect(){
-    if(enableSin){
-        generateLines();
-    }
-    for(let i = 0; i < linesArray.length; i++) {
-        let diffuseProduct = mult(lightDiffuse, colorArray[6]);
-        gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
-
-        let lineNormal = [];
-        if(i > 1){
-            stack.push(mvMatrix);
-                let temp = linesArray[i][0];
-                mvMatrix = mult(mvMatrix, translate(temp[0], 0, temp[2]));
-                mvMatrix = mult(mvMatrix, rotateY(theta2));
-                mvMatrix = mult(mvMatrix, translate(-temp[0], 0, -temp[2]));
-                gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
-
-                //this loop tricks the program into thinking the lines are always facing the light source
-                //which ensures the lines remain lit up at all theta values while they are in the spotlight
-                for (let j = 0; j < linesArray[i].length; j++) {
-                    lineNormal.push(mult(inverse4(mvMatrix), lightPosition));
-                }
-            mvMatrix = stack.pop();
-        } else {
-            for (let j = 0; j < linesArray[i].length; j++) {
-                lineNormal.push(mult(inverse4(mvMatrix), lightPosition));
-            }
-        }
-        var vNormal = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(lineNormal), gl.STREAM_DRAW);
-
-        var vNormalPosition = gl.getAttribLocation( program, "vNormal");
-        gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vNormalPosition);
-
-        let pBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(linesArray[i]), gl.STREAM_DRAW);
-
-        let vPosition = gl.getAttribLocation(program, "vPosition");
-        gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vPosition);
-
-        gl.drawArrays(gl.LINE_STRIP, 0, linesArray[i].length);
-    }
-}
-
-function drawShape(shape, color, isCube) {
-    if(arguments.length === 4){
-        if(useFlat){
-            var vNormal = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-            gl.bufferData(gl.ARRAY_BUFFER, flatten(fileFlatNormal), gl.STREAM_DRAW);
-        } else {
-            var vNormal = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-            gl.bufferData(gl.ARRAY_BUFFER, flatten(fileGNormal), gl.STREAM_DRAW);
-        }
-
-        var vNormalPosition = gl.getAttribLocation( program, "vNormal");
-        gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vNormalPosition);
-    }
-    else if(isCube){
-        if(useFlat){
-            var vNormal = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-            gl.bufferData(gl.ARRAY_BUFFER, flatten(cubeFlatNormal), gl.STREAM_DRAW);
-        } else {
-            var vNormal = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-            gl.bufferData(gl.ARRAY_BUFFER, flatten(cubeGNormal), gl.STREAM_DRAW);
-        }
-
-        var vNormalPosition = gl.getAttribLocation( program, "vNormal");
-        gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vNormalPosition);
-    } else {
-        if(useFlat){
-            var vNormal = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-            gl.bufferData(gl.ARRAY_BUFFER, flatten(sphereFlatNormal), gl.STREAM_DRAW);
-        } else {
-            var vNormal = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-            gl.bufferData(gl.ARRAY_BUFFER, flatten(sphereGNormal), gl.STREAM_DRAW);
-        }
-
-        var vNormalPosition = gl.getAttribLocation( program, "vNormal");
-        gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vNormalPosition);    
-    }
-
-    let diffuseProduct = mult(lightDiffuse, color);
-    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
-
-    let pBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(shape), gl.STREAM_DRAW);
-
-    let vPosition = gl.getAttribLocation(program,  "vPosition");
-    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vPosition);
-
-    gl.drawArrays( gl.TRIANGLES, 0, shape.length );
-
-}
-
-function drawBB(box){
-    let diffuseProduct = mult(lightDiffuse, colorArray[6]);
-    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
-
-    for(let i = 0; i < box.length; i++){
-        let lineNormal = [];
-        for (let j = 0; j < box[i].length; j++) {
-            lineNormal.push(mult(inverse4(mvMatrix), lightPosition));
-        }
-        var vNormal = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(lineNormal), gl.STREAM_DRAW);
-
-        var vNormalPosition = gl.getAttribLocation( program, "vNormal");
-        gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vNormalPosition);
-
-        let pBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(box[i]), gl.STREAM_DRAW);
-
-        let vPosition = gl.getAttribLocation(program, "vPosition");
-        gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vPosition);
-
-        gl.drawArrays(gl.LINE_LOOP, 0, box[i].length);
-    }
 }
 
 function cube() {
@@ -483,20 +346,6 @@ function quad(a, b, c, d) {
     return verts;
 }
 
-function triangle(a, b, c) {
-
-
-
-    sphereArray.push(a);
-    sphereArray.push(b);
-    sphereArray.push(c);
-
-    // normals are vectors
-
-    index += 3;
-
-}
-
 
 function divideTriangle(a, b, c, count) {
     if ( count > 0 ) {
@@ -515,7 +364,15 @@ function divideTriangle(a, b, c, count) {
         divideTriangle( ab, bc, ac, count - 1 );
     }
     else {
-        triangle( a, b, c );
+        sphereArray.push(a);
+        sphereArray.push(b);
+        sphereArray.push(c);
+
+        // normals are vectors
+        sphereGNormal.push(normalize(vec4(-a[0], -a[1], -a[2], 0.0)));
+        sphereGNormal.push(normalize(vec4(-b[0], -b[1], -b[2], 0.0)));
+        sphereGNormal.push(normalize(vec4(-c[0], -c[1], -c[2], 0.0)));
+        index += 3;
     }
 }
 
@@ -570,5 +427,6 @@ function doNewell(intersect){
         ny += (current[2]-next[2])*(current[0]+next[0]);
         nz += (current[0]-next[0])*(current[1]+next[1]);
     }
-    return vec4(nx, ny, nz, 0.0);
+
+    return normalize(vec4(nx, ny, nz, 0.0));
 }
