@@ -86,7 +86,7 @@ function main()
     sphereGNormal = gNormals(shapeArray[1]);
 
     colorArray.push(vec4(1.0, 1.0, 1.0, 1.0)); //White Lines
-    colorArray.push(vec4(1.0, 1.0, 1.0, 1.0));
+    colorArray.push(vec4(1.0, 0.4, 0.0, 1.0));
 
     generateLines();
 
