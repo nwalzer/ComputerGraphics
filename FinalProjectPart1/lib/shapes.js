@@ -1,4 +1,4 @@
-
+//taken from class example
 //build cube
 function cube() {
     let verts = [];
@@ -11,6 +11,7 @@ function cube() {
     return verts;
 }
 
+//taken from class example
 //used for cube building
 function quad(a, b, c, d) {
     let verts = [];
@@ -35,6 +36,7 @@ function quad(a, b, c, d) {
     return verts;
 }
 
+//taken from class example
 //used for sphere generation
 function divideTriangle(a, b, c, count) {
     if ( count > 0 ) {
@@ -65,6 +67,7 @@ function divideTriangle(a, b, c, count) {
     }
 }
 
+//taken from class example
 //used for sphere making
 function tetrahedron(a, b, c, d, n) {
     divideTriangle(a, b, c, n);
@@ -118,4 +121,66 @@ function generateBB(right, top, front){
     box[5].push(vec4(right, -top, front)); //bottom right front
 
     return box;
+}
+
+//generates lines connecting all of the objects
+function generateLines(){
+    linesArray = [];
+    let topmost = vec4(0.0, topVert, 0.0, 1.0);
+    let firstSplit = vec4(0.0, topVert - (topVert - vert)/2, 0.0, 1.0);
+
+    let L = vec4(hor, topVert - (topVert - vert)/2, 0.0, 1.0);
+    let topL = vec4(hor, vert+1, 0.0, 1.0); //top of yellow sphere
+    let botL = vec4(hor, vert-1, 0.0, 1.0); //bottom of yellow sphere
+    let LSplit = vec4(hor, -2, 0.0, 1.0);
+    let LL = vec4(hor+hor2, -2, 0.0, 1.0);
+    let centerLL = vec4(hor+hor2, vert2+2-sinOffset, 0.0, 1.0); //magenta sphere
+    let LR = vec4(hor-hor2, -2, 0.0, 1.0);
+    let centerLR = vec4(hor-hor2, vert2+1+sinOffset, 0.0, 1.0); //green cube
+
+    let R = vec4(-hor, topVert - (topVert - vert)/2, 0.0, 1.0);
+    let RSplit = vec4(-hor, -2, 0.0, 1.0);
+    let RL = vec4(-hor-hor2, -2, 0.0, 1.0);
+    let centerRL = vec4(-hor-hor2, vert2+2+sinOffset, 0.0, 1.0); //cyan sphere
+
+    linesArray.push([]); //top vertical
+    linesArray[0].push(topmost);
+    linesArray[0].push(firstSplit);
+
+    linesArray.push([]); //top horizontal
+    linesArray[1].push(L);
+    linesArray[1].push(R);
+
+    linesArray.push([]); //left vertical
+    linesArray[2].push(L);
+    linesArray[2].push(topL);
+
+    linesArray.push([]); //left vertical -> right
+    linesArray[3].push(botL);
+    linesArray[3].push(LSplit);
+    linesArray[3].push(LR);
+    linesArray[3].push(centerLR);
+
+    linesArray.push([]); //left vertical -> left
+    linesArray[4].push(LSplit);
+    linesArray[4].push(LL);
+    linesArray[4].push(centerLL);
+
+    linesArray.push([]); //right vertical
+    linesArray[5].push(R);
+    linesArray[5].push(RSplit);
+
+    linesArray.push([]); //right vertical -> left
+    linesArray[6].push(RSplit);
+    linesArray[6].push(RL);
+    linesArray[6].push(centerRL);
+
+    if(fileUploaded){ //creates lines to connect to bounding box of file
+        let RR = vec4(-hor+hor2, -2, 0.0, 1.0);
+        let centerRR = vec4(-hor+hor2, vert2+1-sinOffset+fileBB[0][0][1], 0.0, 1.0);
+        linesArray.push([]); //right vertical -> right
+        linesArray[7].push(RSplit);
+        linesArray[7].push(RR);
+        linesArray[7].push(centerRR);
+    }
 }

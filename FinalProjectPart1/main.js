@@ -1,4 +1,11 @@
+/* EXTRA CREDIT FEATURES
+    Press V to toggle sinusoid y-axis transition of 3rd level hierarchy
+    Press B to toggle drawing bounding boxes around cubes and spheres
+    Upload any of the .ply files from project 2 to be one of the models
+    Use W, A, S, D, Q, E to change the direction of the lighting
+ */
 
+//a lot of these variables were taken directly from class examples
 let shapeArray = [], colorArray = [], sphereArray = [], linesArray = [], fileFaces = [];
 let cubeFlatNormal = [], cubeGNormal = [], sphereFlatNormal = [], sphereGNormal = [], fileFlatNormal = [], fileGNormal = [];
 let sphereBB = [], cubeBB = [], fileBB = [];
@@ -64,12 +71,12 @@ function main()
     // Clear <canvas> by clearing the color buffer
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
-    gl.cullFace(gl.BACK);
+    gl.cullFace(gl.BACK); //enable depth testing and backface culling
 
 
 
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
+    tetrahedron(va, vb, vc, vd, numTimesToSubdivide); //build sphere
 
     shapeArray.push(cube());
     colorArray.push(vec4(1.0, 0.0, 0.0, 1.0)); //red cube
@@ -79,7 +86,7 @@ function main()
     cubeGNormal = gNormals(shapeArray[0]); //calculate cube gouraud normals
     cubeBB = generateBB(0.5, 0.5, 0.5);
 
-    shapeArray.push(sphereArray);
+    shapeArray.push(sphereArray); //load sphere
     colorArray.push(vec4(1.0, 0.0, 1.0, 1.0)); //magenta sphere
     colorArray.push(vec4(1.0, 1.0, 0.0, 1.0)); //yellow sphere
     colorArray.push(vec4(0.0, 1.0, 1.0, 1.0)); //cyan sphere
@@ -97,6 +104,7 @@ function main()
     pMatrix = perspective(fovy, 1, .1, 100); //perspective calculation
     gl.uniformMatrix4fv( projection, false, flatten(pMatrix) );
 
+    //taken from class examples
     let specularProduct = mult(lightSpecular, materialSpecular);
     let ambientProduct = mult(lightAmbient, materialAmbient);
 
@@ -175,67 +183,6 @@ function updateLightDir(x, y, z){
     gl.uniform3fv(gl.getUniformLocation(program, "lightDirection"), flatten(lightDirection));
 }
 
-//generates lines connecting all of the objects
-function generateLines(){
-    linesArray = [];
-    let topmost = vec4(0.0, topVert, 0.0, 1.0);
-    let firstSplit = vec4(0.0, topVert - (topVert - vert)/2, 0.0, 1.0);
-
-    let L = vec4(hor, topVert - (topVert - vert)/2, 0.0, 1.0);
-    let topL = vec4(hor, vert+1, 0.0, 1.0); //top of yellow sphere
-    let botL = vec4(hor, vert-1, 0.0, 1.0); //bottom of yellow sphere
-    let LSplit = vec4(hor, -2, 0.0, 1.0);
-    let LL = vec4(hor+hor2, -2, 0.0, 1.0);
-    let centerLL = vec4(hor+hor2, vert2+2-sinOffset, 0.0, 1.0); //magenta sphere
-    let LR = vec4(hor-hor2, -2, 0.0, 1.0);
-    let centerLR = vec4(hor-hor2, vert2+1+sinOffset, 0.0, 1.0); //green cube
-
-    let R = vec4(-hor, topVert - (topVert - vert)/2, 0.0, 1.0);
-    let RSplit = vec4(-hor, -2, 0.0, 1.0);
-    let RL = vec4(-hor-hor2, -2, 0.0, 1.0);
-    let centerRL = vec4(-hor-hor2, vert2+2+sinOffset, 0.0, 1.0); //cyan sphere
-
-    linesArray.push([]); //top vertical
-    linesArray[0].push(topmost);
-    linesArray[0].push(firstSplit);
-
-    linesArray.push([]); //top horizontal
-    linesArray[1].push(L);
-    linesArray[1].push(R);
-
-    linesArray.push([]); //left vertical
-    linesArray[2].push(L);
-    linesArray[2].push(topL);
-
-    linesArray.push([]); //left vertical -> right
-    linesArray[3].push(botL);
-    linesArray[3].push(LSplit);
-    linesArray[3].push(LR);
-    linesArray[3].push(centerLR);
-
-    linesArray.push([]); //left vertical -> left
-    linesArray[4].push(LSplit);
-    linesArray[4].push(LL);
-    linesArray[4].push(centerLL);
-
-    linesArray.push([]); //right vertical
-    linesArray[5].push(R);
-    linesArray[5].push(RSplit);
-
-    linesArray.push([]); //right vertical -> left
-    linesArray[6].push(RSplit);
-    linesArray[6].push(RL);
-    linesArray[6].push(centerRL);
-
-    if(fileUploaded){ //creates lines to connect to bounding box of file
-        let RR = vec4(-hor+hor2, -2, 0.0, 1.0);
-        let centerRR = vec4(-hor+hor2, vert2+1-sinOffset+fileBB[0][0][1], 0.0, 1.0);
-        linesArray.push([]); //right vertical -> right
-        linesArray[7].push(RSplit);
-        linesArray[7].push(RR);
-        linesArray[7].push(centerRR);
-    }
-}
 
 //update drawing
 function render() {
@@ -352,13 +299,10 @@ function doNewell(intersect){
     let nx = 0;
     let ny = 0;
     let nz = 0;
-    let current;
-    let next;
-    let i;
 
-    for (i = 0; i < intersect.length; i++) {
-        current = vec4(intersect[i % intersect.length]);
-        next = vec4(intersect[(i + 1) % intersect.length]);
+    for (let i = 0; i < intersect.length; i++) {
+        let current = vec4(intersect[i % intersect.length]);
+        let next = vec4(intersect[(i + 1) % intersect.length]);
         nx += (current[1]-next[1])*(current[2]+next[2]);
         ny += (current[2]-next[2])*(current[0]+next[0]);
         nz += (current[0]-next[0])*(current[1]+next[1]);

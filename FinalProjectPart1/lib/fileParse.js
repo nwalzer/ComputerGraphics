@@ -1,3 +1,4 @@
+//Reused from my projects 1 and 2
 //loads file contents into appropriate spaces (ortho, viewport, pointsArray, projMatrix, etc).
 function parseFile(evt){
     let files = evt.target.files; // FileList object
