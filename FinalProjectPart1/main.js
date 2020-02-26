@@ -77,12 +77,14 @@ function main()
     colorArray.push(vec4(0.0, 0.0, 1.0, 1.0)); //blue cube
     cubeFlatNormal = fNormals(shapeArray[0]); //calculate cube flat normals
     cubeGNormal = gNormals(shapeArray[0]); //calculate cube gouraud normals
+    cubeBB = generateBB(0.5, 0.5, 0.5);
 
     shapeArray.push(sphereArray);
     colorArray.push(vec4(1.0, 0.0, 1.0, 1.0)); //magenta sphere
     colorArray.push(vec4(1.0, 1.0, 0.0, 1.0)); //yellow sphere
     colorArray.push(vec4(0.0, 1.0, 1.0, 1.0)); //cyan sphere
     sphereFlatNormal = fNormals(shapeArray[1]); //calculate sphere flat normals
+    sphereBB = generateBB(1, 1, 1);
 
     colorArray.push(vec4(1.0, 1.0, 1.0, 1.0)); //White Lines
     colorArray.push(vec4(1.0, 0.4, 0.0, 1.0)); //orange file color
@@ -254,6 +256,7 @@ function render() {
     mvMatrix = mult(mvMatrix, rotateY(theta)); //rotation at top level
     gl.uniformMatrix4fv( modelView, false, flatten(mult(translate(0, 5, 0), mvMatrix)));
     drawShape(shapeArray[0], colorArray[0], true); //level 1 cube (root)
+    drawBB(cubeBB);
 
     stack.push(mvMatrix); //push two copies
     stack.push(mvMatrix);
@@ -263,17 +266,20 @@ function render() {
             mvMatrix = mult(mvMatrix, translate(0, -sinOffset, 0)); //shift by -vertical offset
             gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
             drawShape(shapeArray[1], colorArray[3], false); //level 3 sphere
+            drawBB(sphereBB);
         mvMatrix = stack.pop();
         stack.push(mvMatrix);
             mvMatrix = mult(mult(mvMatrix, translate(-hor2, vert2, 0)), rotateY(theta3)); //rotate in third level direction
             mvMatrix = mult(mvMatrix, translate(0, sinOffset, 0)); //shift by vertical offset
             gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
             drawShape(shapeArray[0], colorArray[1], true); //level 3 cube
+            drawBB(cubeBB);
         mvMatrix = stack.pop();
         mvMatrix = stack.pop(); //pop one of the original copies off
         mvMatrix = mult(mult(mvMatrix, translate(hor, vert, 0)), rotateY(-theta2)); //rotate counter clockwise
         gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
         drawShape(shapeArray[1], colorArray[4], false); //level 2 sphere
+        drawBB(sphereBB);
     mvMatrix = stack.pop();
 
 
@@ -285,6 +291,7 @@ function render() {
             mvMatrix = mult(mvMatrix, translate(0, sinOffset, 0)); //translate by vertical offset
             gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
             drawShape(shapeArray[1], colorArray[5], false); //level 3 sphere
+            drawBB(sphereBB);
         mvMatrix = stack.pop();
         if(fileUploaded){ //for custom uploaded .ply files
             stack.push(mvMatrix);
@@ -299,6 +306,7 @@ function render() {
         mvMatrix = mult(mult(mvMatrix, translate(-hor, vert, 0)), rotateY(-theta2)); //rotate counter clockwise
         gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
         drawShape(shapeArray[0], colorArray[2], true); //blue cube
+        drawBB(cubeBB);
     mvMatrix = stack.pop();
 
     gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );

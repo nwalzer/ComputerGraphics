@@ -72,3 +72,50 @@ function tetrahedron(a, b, c, d, n) {
     divideTriangle(a, d, b, n);
     divideTriangle(a, c, d, n);
 }
+
+
+function generateBB(right, top, front){
+    let box = [];
+    box.push([]);
+    box[0].push(vec4(right, top, -front)); //top right back
+    box[0].push(vec4(-right, top, -front)); //top left back
+    box[0].push(vec4(-right, -top, -front)); //bottom left back
+    box[0].push(vec4(right, -top, -front)); //bottom right back
+
+    //top face
+    box.push([]);
+    box[1].push(vec4(right, top, -front)); //top right back
+    box[1].push(vec4(-right, top, -front)); //top right back
+    box[1].push(vec4(-right, top, front)); //top left front
+    box[1].push(vec4(right, top, front)); //top right front
+
+    //right face
+    box.push([]);
+    box[2].push(vec4(right, top, -front)); //top right back
+    box[2].push(vec4(right, top, front)); //top right front
+    box[2].push(vec4(right, -top, front)); //bottom right front
+    box[2].push(vec4(right, -top, -front)); //bottom right back
+
+    //bottom face
+    box.push([]);
+    box[3].push(vec4(right, -top, -front)); //bottom right back
+    box[3].push(vec4(right, -top, front)); //bottom right front
+    box[3].push(vec4(-right, -top, front)); //bottom left front
+    box[3].push(vec4(-right, -top, -front)); //bottom left back
+
+    //left face
+    box.push([]);
+    box[4].push(vec4(-right, top, -front)); //top left back
+    box[4].push(vec4(-right, top, front)); //top left front
+    box[4].push(vec4(-right, -top, front)); //bottom left front
+    box[4].push(vec4(-right, -top, -front)); //bottom left back
+
+    //front face
+    box.push([]);
+    box[5].push(vec4(right, top, front)); //top right front
+    box[5].push(vec4(-right, top, front)); //top left front
+    box[5].push(vec4(-right, -top, front)); //bottom left front
+    box[5].push(vec4(right, -top, front)); //bottom right front
+
+    return box;
+}
