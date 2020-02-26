@@ -73,7 +73,7 @@ function tetrahedron(a, b, c, d, n) {
     divideTriangle(a, c, d, n);
 }
 
-
+//given right-most, top-most, and front-most values, generates bounding box
 function generateBB(right, top, front){
     let box = [];
     box.push([]);
