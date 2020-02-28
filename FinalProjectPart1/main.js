@@ -91,6 +91,7 @@ function main()
     colorArray.push(vec4(1.0, 1.0, 0.0, 1.0)); //yellow sphere
     colorArray.push(vec4(0.0, 1.0, 1.0, 1.0)); //cyan sphere
     sphereFlatNormal = fNormals(shapeArray[1]); //calculate sphere flat normals
+    sphereGNormal = gNormals(shapeArray[1]);
     sphereBB = generateBB(1, 1, 1);
 
     colorArray.push(vec4(1.0, 1.0, 1.0, 1.0)); //White Lines
@@ -267,8 +268,6 @@ function render() {
 }
 
 //calculates Gouraud normals for given shape
-//though it comes out negative for spheres
-//which is why spheres have their own gouraud generation
 function gNormals(shape) {
     let normals = [];
     for (let i = 0; i < shape.length; i++) {

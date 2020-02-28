@@ -56,13 +56,9 @@ function divideTriangle(a, b, c, count) {
     }
     else {
         sphereArray.push(a);
-        sphereArray.push(b);
         sphereArray.push(c);
+        sphereArray.push(b);
 
-        //Gouraud normals calculated once during generation
-        sphereGNormal.push(normalize(vec4(-a[0], -a[1], -a[2], 0.0)));
-        sphereGNormal.push(normalize(vec4(-b[0], -b[1], -b[2], 0.0)));
-        sphereGNormal.push(normalize(vec4(-c[0], -c[1], -c[2], 0.0)));
         index += 3;
     }
 }
