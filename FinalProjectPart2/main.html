@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Final Project Part 1</title>
+
+    <script id="vshader" type="x-shader/x-vertex">
+	attribute vec4 vPosition;
+	attribute vec4 vNormal;
+	uniform vec4 ambientProduct, diffuseProduct, specularProduct;
+    uniform vec4 lightPosition;
+	uniform mat4 projectionMatrix;
+	uniform mat4 modelMatrix;
+	uniform vec3 lightDirection;
+	varying vec4 fColor;
+	uniform float shininess, angle;
+
+	void main() {
+	    vec3 pos = (modelMatrix * vPosition).xyz; //vertex position
+        vec3 L = normalize(lightPosition.xyz - pos); //lightPosition - vertex position
+        vec3 N = normalize(modelMatrix * vNormal).xyz; //transformed normal
+
+        vec3 V = normalize(-pos); //camera to vertex position
+        vec3 R = ((2.0 * dot(L, N) * N) - L).xyz; //reflection vector
+
+
+        vec4 diffuse = vec4(0.0, 0.0, 0.0, 1.0); //initialize diffuse to 0
+        vec4 ambient = ambientProduct * diffuseProduct; //assign color to ambient light
+        vec4 specular = vec4(0.0, 0.0, 0.0, 1.0); //initialize specular to 0
+        vec3 lightDir = normalize(lightDirection); //determine light direction
+
+        if(dot(L, -lightDir) > angle){ //if in spotlight
+            diffuse = diffuseProduct * dot(L, N); //set diffuse
+            specular = specularProduct * pow(max(dot(V, R), 0.0), shininess); //set specular
+        }
+
+        fColor = diffuse + specular + ambient;
+        fColor.a = 1.0;
+
+        gl_Position = projectionMatrix * modelMatrix * vPosition;
+  		gl_PointSize = 10.0;		// Point size
+  	}
+	</script>
+
+    <script id="fshader" type="x-shader/x-fragment">
+	precision mediump float;
+	varying vec4 fColor;
+
+	void main()
+	{
+		gl_FragColor = fColor;	// Point color
+  	}
+	</script>
+
+    <script src="lib/webgl-utils.js"></script>
+    <script src="lib/initShaders.js"></script>
+    <script src="lib/MV.js"></script>
+    <script src="lib/fileParse.js"></script>
+    <script src="lib/draw.js"></script>
+    <script src="lib/shapes.js"></script>
+
+    <script src="main.js"></script>
+
+</head>
+
+<body onload="main()">
+
+<div style="text-align: center">
+
+    <canvas id="webgl" width="400" height="400" style="border: 1px solid black;">
+        Please use a browser that supports the "canvas" tag.
+    </canvas>
+    <form id="fileInput">
+        <input type="file" id="custFile" name="custFile" accept=".ply">
+    </form>
+</div>
+<div style="text-align: center">
+    <p>Press i to decrease the spotlight angle, p to increase the spotlight angle, m to enable Gouraud shading, n to enable flat shading</p>
+    <p>w to angle the spotlight along the +y axis, s for the -y axis, a for the -x axis, d for the +x axis, q for the +z axis, e for the -z axis </p>
+    <p>v to toggle sinusoid, and b to toggle drawing bounding boxes</p>
+    <p id="shadeType">You are currently using flat shading</p>
+    <p id="lightDir">The light is pointing at: (-1, 0, -5)</p>
+</div>
+
+</body>
+</html>
