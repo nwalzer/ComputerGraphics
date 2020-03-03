@@ -8,8 +8,11 @@ function connect(){
     let diffuseProduct = mult(lightDiffuse, colorArray[6]); //set diffuse to line color
     gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
 
+    gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 2.0);
+
     for(let i = 0; i < linesArray.length; i++) { //for each line
         let lineNormal = [];
+        let tCoordBuff = [];
         if(i > 1){ //if we are dealing with a non-top-level line
             stack.push(mvMatrix); //store current model matrix
             let temp = linesArray[i][0]; //get first vertex value
@@ -23,6 +26,7 @@ function connect(){
             let inv = inverse4(mvMatrix);
             for (let j = 0; j < linesArray[i].length; j++) {
                 lineNormal.push(mult(inv, lightPosition));
+                tCoordBuff.push(texCoord[0]);
             }
             mvMatrix = stack.pop();
         } else {
@@ -31,6 +35,7 @@ function connect(){
             let inv = inverse4(mvMatrix);
             for (let j = 0; j < linesArray[i].length; j++) {
                 lineNormal.push(mult(inv, lightPosition));
+                tCoordBuff.push(texCoord[0]);
             }
         }
         var vNormal = gl.createBuffer();
@@ -40,6 +45,14 @@ function connect(){
         var vNormalPosition = gl.getAttribLocation( program, "vNormal");
         gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(vNormalPosition); //load normals
+
+        let tBuffer = gl.createBuffer();
+        gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer );
+        gl.bufferData( gl.ARRAY_BUFFER, flatten(tCoordBuff), gl.STATIC_DRAW );
+
+        let tPosition = gl.getAttribLocation( program, "vTexCoord" );
+        gl.vertexAttribPointer( tPosition, 2, gl.FLOAT, false, 0, 0 );
+        gl.enableVertexAttribArray( tPosition );
 
         let pBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
@@ -55,26 +68,29 @@ function connect(){
 
 //Draws the given shape using the given color
 function drawShape(shape, color, isCube) {
-    if(arguments.length === 4){ //if this is a .ply file or wall
-        if(arguments[3] === true){
-            if(useFlat){ //if we are using flat shading
-                var vNormal = gl.createBuffer();
-                gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-                gl.bufferData(gl.ARRAY_BUFFER, flatten(fileFlatNormal), gl.STREAM_DRAW); //load flat normals
-            } else {
-                var vNormal = gl.createBuffer();
-                gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-                gl.bufferData(gl.ARRAY_BUFFER, flatten(fileGNormal), gl.STREAM_DRAW); //load gouraud normals
-            }
-        } else {
-            let norms = [];
-            let inv = inverse4(mvMatrix);
-            for (let j = 0; j < shape.length; j++) {
-                norms.push(mult(inv, lightPosition));
-            }
+    gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 2.0);
+    let tCoordBuff = [];
+    for(let i = 0; i < shape.length; i++){
+        tCoordBuff.push(texCoord[0]);
+    }
+
+    let tBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(tCoordBuff), gl.STATIC_DRAW );
+
+    let tPosition = gl.getAttribLocation( program, "vTexCoord" );
+    gl.vertexAttribPointer( tPosition, 2, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( tPosition );
+
+    if(arguments.length === 4){ //if this is a .ply file
+        if(useFlat){ //if we are using flat shading
             var vNormal = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-            gl.bufferData(gl.ARRAY_BUFFER, flatten(norms), gl.STREAM_DRAW); //load flat normals
+            gl.bufferData(gl.ARRAY_BUFFER, flatten(fileFlatNormal), gl.STREAM_DRAW); //load flat normals
+        } else {
+            var vNormal = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
+            gl.bufferData(gl.ARRAY_BUFFER, flatten(fileGNormal), gl.STREAM_DRAW); //load gouraud normals
         }
     }
     else if(isCube){ //if shape is cube
@@ -119,7 +135,22 @@ function drawShape(shape, color, isCube) {
 }
 
 //Draws the given shape using the given color
-function drawWall(wall) {
+function drawWall(wall, id) {
+    if(!enableTextures){
+        gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 2.0);
+    } else if(id === "Wall"){
+        gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 1.0);
+    } else {
+        gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 0.0);
+    }
+    let tBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(texCoordsArray), gl.STATIC_DRAW );
+
+    let tPosition = gl.getAttribLocation( program, "vTexCoord" );
+    gl.vertexAttribPointer( tPosition, 2, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( tPosition );
+
     var vNormal = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(wallNormals), gl.STREAM_DRAW); //load flat normals
@@ -174,4 +205,54 @@ function drawBB(box){
 
         gl.drawArrays(gl.LINE_LOOP, 0, box[i].length); //draw box face
     }
+}
+
+function configureATexture(image, id) {
+    texture = gl.createTexture();
+    if(id === 0){
+        gl.activeTexture(gl.TEXTURE0);
+    } else {
+        gl.activeTexture(gl.TEXTURE1);
+    }
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+
+    gl.texImage2D(
+        gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+    if(id === 0){
+        gl.uniform1i(gl.getUniformLocation(program, "tex0"), 0);
+    } else {
+        gl.uniform1i(gl.getUniformLocation(program, "tex1"), 1);
+    }
+
+
+}
+
+function createATexture() {
+
+    var tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+
+    gl.texImage2D(
+        gl.TEXTURE_2D, 0, gl.RGBA, 2, 2, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+        new Uint8Array([0, 0, 255, 255, 255, 0, 0, 255, 0, 0, 255, 255, 0, 0, 255, 255])
+    );
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+    texCoordsArray.push(texCoord[0]);
+    texCoordsArray.push(texCoord[1]);
+    texCoordsArray.push(texCoord[2]);
+    texCoordsArray.push(texCoord[0]);
+    texCoordsArray.push(texCoord[1]);
+    texCoordsArray.push(texCoord[3]);
+
 }

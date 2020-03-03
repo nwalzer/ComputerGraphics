@@ -33,9 +33,20 @@ var angle = 0.9;
 let fovy = 45.0;  // Field-of-view in Y direction angle (in degrees)
 let program;
 
-let mvMatrix, pMatrix;
+let minT = 0.0, maxT = 1.0;
+
+let texCoordsArray = [];
+let texCoord = [
+    vec2(minT, minT),
+    vec2(minT, maxT),
+    vec2(maxT, maxT),
+    vec2(maxT, minT)
+];
+let texture;
+
+let mvMatrix, pMatrix, wallTexture, floorTexture;
 let modelView, projection;
-let fileUploaded = false, useFlat = true, enableSin = false, enableBB = false, enableShadows = false;
+let fileUploaded = false, useFlat = true, enableSin = false, enableBB = false, enableShadows = false, enableTextures = true;
 let theta = 0, theta2 = 0, theta3 = 0, sinOffset = 0, sinTheta = 0;
 let hor = 5, hor2 = 2, vert = 1, vert2 = -5, topVert = 5, wallSize = 20;
 const eye = vec3(0.0, 0, 30);
@@ -100,6 +111,30 @@ function main()
 
     wallCube = buildSquare(wallSize);
     wallNormals = fNormals(wallCube);
+
+    createATexture();
+
+    wallTexture = new Image();
+    wallTexture.crossOrigin = "";
+    wallTexture.src = "http://web.cs.wpi.edu/~jmcuneo/stones.bmp";
+    wallTexture.onload = function(){
+        configureATexture(wallTexture, 0);
+    };
+
+    floorTexture = new Image();
+    floorTexture.crossOrigin = "";
+    floorTexture.src = "http://web.cs.wpi.edu/~jmcuneo/grass.bmp";
+    floorTexture.onload = function(){
+        configureATexture(floorTexture, 1);
+    };
+
+
+    texCoordsArray.push(texCoord[0]);
+    texCoordsArray.push(texCoord[1]);
+    texCoordsArray.push(texCoord[2]);
+    texCoordsArray.push(texCoord[0]);
+    texCoordsArray.push(texCoord[1]);
+    texCoordsArray.push(texCoord[3]);
 
     generateLines(); //generate the lines that will connect all of the models together
 
@@ -207,22 +242,22 @@ function render() {
 
     mvMatrix = lookAt(eye, at , up); //calculate model matrix
     stack.push(mvMatrix); //push initial model matrix
-    mvMatrix = mult(mult(mvMatrix, translate(wallSize/Math.sqrt(2), 0, 0)), rotateY(-45));
-    gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
-    drawWall(wallCube);
+        mvMatrix = mult(mult(mvMatrix, translate(wallSize/Math.sqrt(2), 0, 0)), rotateY(-45)); //position left wall
+        gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
+        drawWall(wallCube, "Wall"); //draw left wall
     mvMatrix = stack.pop();
 
     stack.push(mvMatrix);
-    mvMatrix = mult(mult(mvMatrix, translate(-wallSize/Math.sqrt(2), 0, 0)), rotateY(45));
-    gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
-    drawWall(wallCube);
+        mvMatrix = mult(mult(mvMatrix, translate(-wallSize/Math.sqrt(2), 0, 0)), rotateY(45)); //position right wall
+        gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
+        drawWall(wallCube, "Wall"); //draw right wall
     mvMatrix = stack.pop();
 
     stack.push(mvMatrix);
-    mvMatrix = mult(mult(mvMatrix, translate(0, -wallSize/2, wallSize/Math.sqrt(2))), rotateY(45));
-    mvMatrix = mult(mvMatrix, rotateX(-90));
-    gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
-    drawWall(wallCube);
+        mvMatrix = mult(mult(mvMatrix, translate(0, -wallSize/2, wallSize/Math.sqrt(2))), rotateY(45));
+        mvMatrix = mult(mvMatrix, rotateX(-90));
+        gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
+        drawWall(wallCube, "Floor");
     mvMatrix = stack.pop();
 
     mvMatrix = mult(mvMatrix, rotateY(theta)); //rotation at top level

@@ -7,13 +7,17 @@
     <script id="vshader" type="x-shader/x-vertex">
 	attribute vec4 vPosition;
 	attribute vec4 vNormal;
+	attribute vec2 vTexCoord;
+
 	uniform vec4 ambientProduct, diffuseProduct, specularProduct;
     uniform vec4 lightPosition;
 	uniform mat4 projectionMatrix;
 	uniform mat4 modelMatrix;
 	uniform vec3 lightDirection;
 	varying vec4 fColor;
-	uniform float shininess, angle;
+	varying vec2 fTexCoord;
+	varying float fTexture;
+	uniform float shininess, angle, vTexture;
 
 	void main() {
 	    vec3 pos = (modelMatrix * vPosition).xyz; //vertex position
@@ -36,6 +40,8 @@
 
         fColor = diffuse + specular + ambient;
         fColor.a = 1.0;
+        fTexCoord = vTexCoord;
+        fTexture = vTexture;
 
         gl_Position = projectionMatrix * modelMatrix * vPosition;
   		gl_PointSize = 10.0;		// Point size
@@ -45,10 +51,21 @@
     <script id="fshader" type="x-shader/x-fragment">
 	precision mediump float;
 	varying vec4 fColor;
+	varying vec2 fTexCoord;
+	varying float fTexture;
+
+	uniform sampler2D tex0;
+    uniform sampler2D tex1;
 
 	void main()
 	{
-		gl_FragColor = fColor;	// Point color
+	    if(fTexture < 0.9){
+	        gl_FragColor = texture2D(tex1, fTexCoord) * fColor;
+	    } else if(fTexture < 1.5){
+	        gl_FragColor = texture2D(tex0, fTexCoord) * fColor;
+	    } else {
+	        gl_FragColor = fColor;
+	    }
   	}
 	</script>
 
