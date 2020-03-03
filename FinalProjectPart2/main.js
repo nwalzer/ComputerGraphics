@@ -9,6 +9,7 @@
 let shapeArray = [], colorArray = [], sphereArray = [], linesArray = [], fileFaces = [];
 let cubeFlatNormal = [], cubeGNormal = [], sphereFlatNormal = [], sphereGNormal = [], fileFlatNormal = [], fileGNormal = [];
 let sphereBB = [], cubeBB = [], fileBB = [];
+let wallCube = [], wallNormals = [];
 
 let gl;
 let va = vec4(0.0, 0.0, -1.0,1);
@@ -34,10 +35,10 @@ let program;
 
 let mvMatrix, pMatrix;
 let modelView, projection;
-let fileUploaded = false, useFlat = true, enableSin = false, enableBB = false;
+let fileUploaded = false, useFlat = true, enableSin = false, enableBB = false, enableShadows = false;
 let theta = 0, theta2 = 0, theta3 = 0, sinOffset = 0, sinTheta = 0;
-let hor = 5, hor2 = 2, vert = 1, vert2 = -5, topVert = 5;
-const eye = vec3(0.0, 0.0, 22);
+let hor = 5, hor2 = 2, vert = 1, vert2 = -5, topVert = 5, wallSize = 20;
+const eye = vec3(0.0, 0, 30);
 const at = vec3(0.0, 0.0, 0.0);
 const up = vec3(0.0, 1.0, 0.0);
 
@@ -96,6 +97,9 @@ function main()
 
     colorArray.push(vec4(1.0, 1.0, 1.0, 1.0)); //White Lines
     colorArray.push(vec4(1.0, 0.4, 0.0, 1.0)); //orange file color
+
+    wallCube = buildSquare(wallSize);
+    wallNormals = fNormals(wallCube);
 
     generateLines(); //generate the lines that will connect all of the models together
 
@@ -202,8 +206,25 @@ function render() {
     }
 
     mvMatrix = lookAt(eye, at , up); //calculate model matrix
-
     stack.push(mvMatrix); //push initial model matrix
+    mvMatrix = mult(mult(mvMatrix, translate(wallSize/Math.sqrt(2), 0, 0)), rotateY(-45));
+    gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
+    drawWall(wallCube);
+    mvMatrix = stack.pop();
+
+    stack.push(mvMatrix);
+    mvMatrix = mult(mult(mvMatrix, translate(-wallSize/Math.sqrt(2), 0, 0)), rotateY(45));
+    gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
+    drawWall(wallCube);
+    mvMatrix = stack.pop();
+
+    stack.push(mvMatrix);
+    mvMatrix = mult(mult(mvMatrix, translate(0, -wallSize/2, wallSize/Math.sqrt(2))), rotateY(45));
+    mvMatrix = mult(mvMatrix, rotateX(-90));
+    gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
+    drawWall(wallCube);
+    mvMatrix = stack.pop();
+
     mvMatrix = mult(mvMatrix, rotateY(theta)); //rotation at top level
     gl.uniformMatrix4fv( modelView, false, flatten(mult(translate(0, 5, 0), mvMatrix)));
     drawShape(shapeArray[0], colorArray[0], true); //level 1 cube (root)
@@ -260,7 +281,6 @@ function render() {
         drawShape(shapeArray[0], colorArray[2], true); //blue cube
         if(enableBB) drawBB(cubeBB);
     mvMatrix = stack.pop();
-
     gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
 
     connect(); //draw lines
@@ -289,6 +309,15 @@ function fNormals(shape){
         normals.push(n);
         normals.push(n);
 
+    }
+    return normals;
+}
+
+function wallNorms(wall){
+    let normals = [];
+    let n = doNewell(wall);
+    for (let i = 0; i < wall.length; i++){
+        normals.push([-n[0], -n[1], -n[2], 0.0]); //push face normal for each vertex
     }
     return normals;
 }

@@ -36,6 +36,15 @@ function quad(a, b, c, d) {
     return verts;
 }
 
+function buildSquare(size){
+    let a = vec4( size, -size,  0, 1.0 ); //bottom left front  0
+    let b = vec4( size,  size,  0, 1.0 ); //top left front     1
+    let c =vec4(  -size,  size,  0, 1.0 ); //top right front    2
+    let d = vec4(  -size, -size,  0, 1.0 ); //bottom right front 3
+
+    return [a, b, c, a, c, d];
+}
+
 //taken from class example
 //used for sphere generation
 function divideTriangle(a, b, c, count) {

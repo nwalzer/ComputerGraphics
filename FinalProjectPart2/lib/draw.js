@@ -55,20 +55,27 @@ function connect(){
 
 //Draws the given shape using the given color
 function drawShape(shape, color, isCube) {
-    if(arguments.length === 4){ //if this is a .ply file
-        if(useFlat){ //if we are using flat shading
-            var vNormal = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-            gl.bufferData(gl.ARRAY_BUFFER, flatten(fileFlatNormal), gl.STREAM_DRAW); //load flat normals
+    if(arguments.length === 4){ //if this is a .ply file or wall
+        if(arguments[3] === true){
+            if(useFlat){ //if we are using flat shading
+                var vNormal = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
+                gl.bufferData(gl.ARRAY_BUFFER, flatten(fileFlatNormal), gl.STREAM_DRAW); //load flat normals
+            } else {
+                var vNormal = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
+                gl.bufferData(gl.ARRAY_BUFFER, flatten(fileGNormal), gl.STREAM_DRAW); //load gouraud normals
+            }
         } else {
+            let norms = [];
+            let inv = inverse4(mvMatrix);
+            for (let j = 0; j < shape.length; j++) {
+                norms.push(mult(inv, lightPosition));
+            }
             var vNormal = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-            gl.bufferData(gl.ARRAY_BUFFER, flatten(fileGNormal), gl.STREAM_DRAW); //load gouraud normals
+            gl.bufferData(gl.ARRAY_BUFFER, flatten(norms), gl.STREAM_DRAW); //load flat normals
         }
-
-        var vNormalPosition = gl.getAttribLocation( program, "vNormal");
-        gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vNormalPosition); //load normals
     }
     else if(isCube){ //if shape is cube
         if(useFlat){ //if using flat shading
@@ -80,10 +87,6 @@ function drawShape(shape, color, isCube) {
             gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
             gl.bufferData(gl.ARRAY_BUFFER, flatten(cubeGNormal), gl.STREAM_DRAW); //load gouraud normals
         }
-
-        var vNormalPosition = gl.getAttribLocation( program, "vNormal");
-        gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vNormalPosition); //load normals
     } else { //if shape is sphere
         if(useFlat){ //if using flat shading
             var vNormal = gl.createBuffer();
@@ -94,11 +97,11 @@ function drawShape(shape, color, isCube) {
             gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
             gl.bufferData(gl.ARRAY_BUFFER, flatten(sphereGNormal), gl.STREAM_DRAW); //load gouraud normals
         }
-
-        var vNormalPosition = gl.getAttribLocation( program, "vNormal");
-        gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vNormalPosition); //load normals
     }
+
+    var vNormalPosition = gl.getAttribLocation( program, "vNormal");
+    gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vNormalPosition); //load normals
 
     let diffuseProduct = mult(lightDiffuse, color); //set diffuse lighting to use provided color
     gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
@@ -112,6 +115,31 @@ function drawShape(shape, color, isCube) {
     gl.enableVertexAttribArray(vPosition); //load vertices
 
     gl.drawArrays( gl.TRIANGLES, 0, shape.length );
+
+}
+
+//Draws the given shape using the given color
+function drawWall(wall) {
+    var vNormal = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(wallNormals), gl.STREAM_DRAW); //load flat normals
+
+    var vNormalPosition = gl.getAttribLocation( program, "vNormal");
+    gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vNormalPosition); //load normals
+
+    let diffuseProduct = mult(lightDiffuse, colorArray[6]); //set diffuse lighting to use provided color
+    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+
+    let pBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(wall), gl.STREAM_DRAW); //load vertices
+
+    let vPosition = gl.getAttribLocation(program,  "vPosition");
+    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPosition); //load vertices
+
+    gl.drawArrays( gl.TRIANGLES, 0, wall.length);
 
 }
 
