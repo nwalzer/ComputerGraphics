@@ -19,8 +19,8 @@ let vd = vec4(0.816497, -0.471405, 0.333333,1);
 let numTimesToSubdivide = 5;
 let index = 0;
 
-let lightPosition = vec4(7.0, 3.0, 3.0, 1.0 );
-let lightDirection = vec3(-1, 0, -5);
+let lightPosition = vec4(0, 5, 10, 1.0 );
+let lightDirection = vec3(1, 0, -5);
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -44,13 +44,13 @@ let texCoord = [
 ];
 let texture;
 
-let mvMatrix, pMatrix, wallTexture, floorTexture;
+let mvMatrix, pMatrix, wallTexture, floorTexture, shadowMatrix;
 let modelView, projection;
-let fileUploaded = false, useFlat = true, enableSin = false, enableBB = false, enableShadows = false, enableTextures = true;
+let fileUploaded = false, useFlat = true, enableSin = false, enableBB = false, enableShadows = true, enableTextures = true;
 let theta = 0, theta2 = 0, theta3 = 0, sinOffset = 0, sinTheta = 0;
 let hor = 5, hor2 = 2, vert = 1, vert2 = -5, topVert = 5, wallSize = 20;
 const eye = vec3(0.0, 0, 30);
-const at = vec3(0.0, 0.0, 0.0);
+const at = vec3(0.0, -1, 0.0);
 const up = vec3(0.0, 1.0, 0.0);
 
 let stack = [];
@@ -108,6 +108,7 @@ function main()
 
     colorArray.push(vec4(1.0, 1.0, 1.0, 1.0)); //White Lines
     colorArray.push(vec4(1.0, 0.4, 0.0, 1.0)); //orange file color
+    colorArray.push(vec4(0.0, 0.0, 0.0, 1.0)); //black shadow
 
     wallCube = buildSquare(wallSize);
     wallNormals = fNormals(wallCube);
@@ -136,6 +137,10 @@ function main()
     texCoordsArray.push(texCoord[1]);
     texCoordsArray.push(texCoord[3]);
 
+    shadowMatrix = mat4();
+    shadowMatrix[3][3] = 0;
+    shadowMatrix[3][2] = -1/lightPosition[2];
+
     generateLines(); //generate the lines that will connect all of the models together
 
     projection = gl.getUniformLocation(program, "projectionMatrix");
@@ -154,6 +159,7 @@ function main()
     gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
     gl.uniform1f(gl.getUniformLocation(program, "shininess"), materialShininess);
     gl.uniform1f(gl.getUniformLocation(program, "angle"), angle);
+    gl.uniform1f(gl.getUniformLocation(program, "isShadow"), 0.0);
 
     window.onkeydown = function(event) {
         let key = event.key;
@@ -185,6 +191,9 @@ function main()
                 break;
             case 's':
                 updateLightDir(0.0, -0.1, 0.0); //shift light position down
+                break;
+            case 'x':
+                enableShadows = !enableShadows;
                 break;
             case 'a':
                 updateLightDir(-0.1, 0, 0.0); //shift light position left
@@ -242,29 +251,40 @@ function render() {
 
     mvMatrix = lookAt(eye, at , up); //calculate model matrix
     stack.push(mvMatrix); //push initial model matrix
-        mvMatrix = mult(mult(mvMatrix, translate(wallSize/Math.sqrt(2), 0, 0)), rotateY(-45)); //position left wall
+        mvMatrix = mult(mvMatrix, translate(wallSize/1.5, 0, 0)); //position left wall
+        mvMatrix = mult(mvMatrix, rotateY(270));
         gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
         drawWall(wallCube, "Wall"); //draw left wall
     mvMatrix = stack.pop();
 
     stack.push(mvMatrix);
-        mvMatrix = mult(mult(mvMatrix, translate(-wallSize/Math.sqrt(2), 0, 0)), rotateY(45)); //position right wall
+        mvMatrix = mult(mvMatrix, translate(-wallSize/1.5, 0, 0)); //position right wall
+        mvMatrix = mult(mvMatrix, rotateY(-270));
         gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
         drawWall(wallCube, "Wall"); //draw right wall
     mvMatrix = stack.pop();
 
     stack.push(mvMatrix);
-        mvMatrix = mult(mult(mvMatrix, translate(0, -wallSize/2, wallSize/Math.sqrt(2))), rotateY(45));
+        mvMatrix = mult(mvMatrix, translate(0, 0, -wallSize)); //position back wall
+        gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
+        drawWall(wallCube, "Wall"); //draw right wall
+    mvMatrix = stack.pop();
+
+    stack.push(mvMatrix);
+        mvMatrix = mult(mvMatrix, translate(0, -wallSize/2, 0));
         mvMatrix = mult(mvMatrix, rotateX(-90));
         gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
         drawWall(wallCube, "Floor");
     mvMatrix = stack.pop();
 
     mvMatrix = mult(mvMatrix, rotateY(theta)); //rotation at top level
-    gl.uniformMatrix4fv( modelView, false, flatten(mult(translate(0, 5, 0), mvMatrix)));
-    drawShape(shapeArray[0], colorArray[0], true); //level 1 cube (root)
-
-    if(enableBB) drawBB(cubeBB);
+    stack.push(mvMatrix);
+    mvMatrix = mult(translate(0, 5, 0), mvMatrix);
+        gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
+        drawShape(shapeArray[0], colorArray[0], true); //level 1 cube (root)
+        if(enableShadows) drawShadow(shapeArray[0], 1, 0, 5);
+        if(enableBB) drawBB(cubeBB);
+    mvMatrix = stack.pop();
 
     stack.push(mvMatrix); //push two copies
     stack.push(mvMatrix);
@@ -274,6 +294,7 @@ function render() {
             mvMatrix = mult(mvMatrix, translate(0, -sinOffset, 0)); //shift by -vertical offset
             gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
             drawShape(shapeArray[1], colorArray[3], false); //level 3 sphere
+            if(enableShadows) drawShadow(shapeArray[1], 3, hor, vert+vert2, hor2);
             if(enableBB) drawBB(sphereBB);
         mvMatrix = stack.pop();
         stack.push(mvMatrix);
@@ -281,12 +302,14 @@ function render() {
             mvMatrix = mult(mvMatrix, translate(0, sinOffset, 0)); //shift by vertical offset
             gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
             drawShape(shapeArray[0], colorArray[1], true); //level 3 cube
+            if(enableShadows) drawShadow(shapeArray[0], 3, hor, vert+vert2, -hor2);
             if(enableBB)drawBB(cubeBB);
         mvMatrix = stack.pop();
         mvMatrix = stack.pop(); //pop one of the original copies off
         mvMatrix = mult(mult(mvMatrix, translate(hor, vert, 0)), rotateY(-theta2)); //rotate counter clockwise
         gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
         drawShape(shapeArray[1], colorArray[4], false); //level 2 sphere
+        if(enableShadows) drawShadow(shapeArray[1], 2, hor, vert);
         if(enableBB) drawBB(sphereBB);
     mvMatrix = stack.pop();
 
@@ -299,6 +322,7 @@ function render() {
             mvMatrix = mult(mvMatrix, translate(0, sinOffset, 0)); //translate by vertical offset
             gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
             drawShape(shapeArray[1], colorArray[5], false); //level 3 sphere
+            if(enableShadows) drawShadow(shapeArray[1], 3, -hor, vert+vert2, -hor2);
             if(enableBB) drawBB(sphereBB);
         mvMatrix = stack.pop();
         if(fileUploaded){ //for custom uploaded .ply files
@@ -307,6 +331,7 @@ function render() {
                 mvMatrix = mult(mvMatrix, translate(0, -sinOffset, 0)); //translate by -vertical offset
                 gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
                 drawShape(shapeArray[2], colorArray[7], false, true); //draw file
+                if(enableShadows) drawShadow(shapeArray[2], 3, -hor, vert+vert2, hor2);
                 drawBB(fileBB); //draw file bounding box
             mvMatrix = stack.pop();
         }
@@ -314,6 +339,7 @@ function render() {
         mvMatrix = mult(mult(mvMatrix, translate(-hor, vert, 0)), rotateY(-theta2)); //rotate counter clockwise
         gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
         drawShape(shapeArray[0], colorArray[2], true); //blue cube
+        if(enableShadows) drawShadow(shapeArray[0], 2, -hor, vert);
         if(enableBB) drawBB(cubeBB);
     mvMatrix = stack.pop();
     gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );

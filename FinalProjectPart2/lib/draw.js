@@ -136,13 +136,24 @@ function drawShape(shape, color, isCube) {
 
 //Draws the given shape using the given color
 function drawWall(wall, id) {
+    let diffuseProduct = mult(lightDiffuse, colorArray[6]); //set diffuse lighting to use provided color
+    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+
     if(!enableTextures){
         gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 2.0);
+        if(id === "Wall"){
+            let diffuseProduct = mult(lightDiffuse, colorArray[2]); //set diffuse lighting to use provided color
+            gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+        } else {
+            let diffuseProduct = mult(lightDiffuse, colorArray[6]); //set diffuse lighting to use provided color
+            gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+        }
     } else if(id === "Wall"){
         gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 1.0);
     } else {
         gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 0.0);
     }
+
     let tBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer );
     gl.bufferData( gl.ARRAY_BUFFER, flatten(texCoordsArray), gl.STATIC_DRAW );
@@ -159,9 +170,6 @@ function drawWall(wall, id) {
     gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vNormalPosition); //load normals
 
-    let diffuseProduct = mult(lightDiffuse, colorArray[6]); //set diffuse lighting to use provided color
-    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
-
     let pBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(wall), gl.STREAM_DRAW); //load vertices
@@ -176,6 +184,10 @@ function drawWall(wall, id) {
 
 //draws a given bounding box
 function drawBB(box){
+    if(enableShadows){
+        gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
+    }
+
     let diffuseProduct = mult(lightDiffuse, colorArray[6]); //set diffuse to color of box
     gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
 
@@ -205,6 +217,39 @@ function drawBB(box){
 
         gl.drawArrays(gl.LINE_LOOP, 0, box[i].length); //draw box face
     }
+}
+
+function drawShadow(shape, level, x, y, x2){
+    gl.uniform1f(gl.getUniformLocation(program, "isShadow"), 1.0);
+    let modelMatrix = lookAt(eye, at , up);
+
+    if(level === 1){
+        modelMatrix = mult(modelMatrix, translate(lightPosition[0]+x, lightPosition[1]+y, lightPosition[2]-wallSize+1));
+        modelMatrix = mult(modelMatrix, shadowMatrix);
+        modelMatrix = mult(modelMatrix, translate(-lightPosition[0], -lightPosition[1], -lightPosition[2]));
+        modelMatrix = mult(modelMatrix, rotateY(theta));
+    } else if(level === 2){
+        let xPos = x*Math.cos(theta * Math.PI/180);
+        modelMatrix = mult(modelMatrix, translate(lightPosition[0]+xPos, lightPosition[1]+y, lightPosition[2]-wallSize+1));
+        modelMatrix = mult(modelMatrix, shadowMatrix);
+        modelMatrix = mult(modelMatrix, translate(-lightPosition[0], -lightPosition[1], -lightPosition[2]));
+        modelMatrix = mult(modelMatrix, rotateY(theta2));
+    } else {
+        let xPos = x*Math.cos(theta * Math.PI/180);
+        xPos += x2*Math.cos((theta2+theta) * Math.PI/180);
+        modelMatrix = mult(modelMatrix, translate(lightPosition[0]+xPos, lightPosition[1]+y, lightPosition[2]-wallSize+1));
+        modelMatrix = mult(modelMatrix, shadowMatrix);
+        modelMatrix = mult(modelMatrix, translate(-lightPosition[0], -lightPosition[1], -lightPosition[2]));
+        modelMatrix = mult(modelMatrix, rotateY(theta3));
+    }
+
+    gl.uniformMatrix4fv( modelView, false, flatten(modelMatrix));
+
+    let diffuseProduct = mult(lightDiffuse, colorArray[8]); //set diffuse lighting to use provided color
+    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+
+    gl.drawArrays( gl.TRIANGLES, 0, shape.length );
+    gl.uniform1f(gl.getUniformLocation(program, "isShadow"), 0.0);
 }
 
 function configureATexture(image, id) {

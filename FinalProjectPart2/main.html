@@ -17,7 +17,7 @@
 	varying vec4 fColor;
 	varying vec2 fTexCoord;
 	varying float fTexture;
-	uniform float shininess, angle, vTexture;
+	uniform float shininess, angle, vTexture, isShadow, usingFlat;
 
 	void main() {
 	    vec3 pos = (modelMatrix * vPosition).xyz; //vertex position
@@ -35,7 +35,9 @@
 
         if(dot(L, -lightDir) > angle){ //if in spotlight
             diffuse = diffuseProduct * dot(L, N); //set diffuse
-            specular = specularProduct * pow(max(dot(V, R), 0.0), shininess); //set specular
+            if(isShadow < 0.9){
+                specular = specularProduct * pow(max(dot(V, R), 0.0), shininess); //set specular
+            }
         }
 
         fColor = diffuse + specular + ambient;
