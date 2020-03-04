@@ -21,7 +21,7 @@ let index = 0;
 
 let lightPosition = vec4(0, 5, 10, 1.0 );
 let lightDirection = vec3(1, 0, -5);
-var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
+var lightAmbient = vec4(0.3, 0.3, 0.3, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 
@@ -159,7 +159,7 @@ function main()
     gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
     gl.uniform1f(gl.getUniformLocation(program, "shininess"), materialShininess);
     gl.uniform1f(gl.getUniformLocation(program, "angle"), angle);
-    gl.uniform1f(gl.getUniformLocation(program, "isShadow"), 0.0);
+    gl.uniform1f(gl.getUniformLocation(program, "usingFlat"), 1.0);
 
     window.onkeydown = function(event) {
         let key = event.key;
@@ -180,11 +180,13 @@ function main()
                 useFlat = false; //change to gouraud
                 var shadeType = document.getElementById("shadeType");
                 shadeType.innerText = "You are currently using Gouraud Shading";
+                gl.uniform1f(gl.getUniformLocation(program, "usingFlat"), 0.0);
                 break;
             case 'n':
                 useFlat = true; //change to flat
                 var shadeType = document.getElementById("shadeType");
                 shadeType.innerText = "You are currently using Flat Shading";
+                gl.uniform1f(gl.getUniformLocation(program, "usingFlat"), 1.0);
                 break;
             case 'w':
                 updateLightDir(0.0, 0.1, 0.0); //shift light direction up
@@ -374,15 +376,6 @@ function fNormals(shape){
     return normals;
 }
 
-function wallNorms(wall){
-    let normals = [];
-    let n = doNewell(wall);
-    for (let i = 0; i < wall.length; i++){
-        normals.push([-n[0], -n[1], -n[2], 0.0]); //push face normal for each vertex
-    }
-    return normals;
-}
-
 //does the newell method for normal calculation
 function doNewell(intersect){
     let nx = 0;
@@ -396,5 +389,5 @@ function doNewell(intersect){
         ny += (current[2]-next[2])*(current[0]+next[0]);
         nz += (current[0]-next[0])*(current[1]+next[1]);
     }
-    return normalize(vec4(nx, ny, nz, 0.0));
+    return normalize(vec4(nx, ny, nz, 1.0));
 }

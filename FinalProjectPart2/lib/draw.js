@@ -1,6 +1,7 @@
 
 //draws all of the white lines which connect objects together
 function connect(){
+    gl.uniform1f(gl.getUniformLocation(program, "type"), 2.0);
     if(enableSin){ //if we are translating due to sinusoid
         generateLines(); //regenerate lines
     }
@@ -26,6 +27,7 @@ function connect(){
             let inv = inverse4(mvMatrix);
             for (let j = 0; j < linesArray[i].length; j++) {
                 lineNormal.push(mult(inv, lightPosition));
+                lineNormal[j][3] = 1.0;
                 tCoordBuff.push(texCoord[0]);
             }
             mvMatrix = stack.pop();
@@ -68,7 +70,8 @@ function connect(){
 
 //Draws the given shape using the given color
 function drawShape(shape, color, isCube) {
-    gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 2.0);
+    gl.uniform1f(gl.getUniformLocation(program, "type"), 0.0);
+    gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 0.0);
     let tCoordBuff = [];
     for(let i = 0; i < shape.length; i++){
         tCoordBuff.push(texCoord[0]);
@@ -136,6 +139,8 @@ function drawShape(shape, color, isCube) {
 
 //Draws the given shape using the given color
 function drawWall(wall, id) {
+    gl.uniform1f(gl.getUniformLocation(program, "type"), 0.0);
+
     let diffuseProduct = mult(lightDiffuse, colorArray[6]); //set diffuse lighting to use provided color
     gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
 
@@ -184,6 +189,8 @@ function drawWall(wall, id) {
 
 //draws a given bounding box
 function drawBB(box){
+    gl.uniform1f(gl.getUniformLocation(program, "type"), 2.0);
+
     if(enableShadows){
         gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
     }
@@ -220,7 +227,7 @@ function drawBB(box){
 }
 
 function drawShadow(shape, level, x, y, x2){
-    gl.uniform1f(gl.getUniformLocation(program, "isShadow"), 1.0);
+    gl.uniform1f(gl.getUniformLocation(program, "type"), 1.0);
     let modelMatrix = lookAt(eye, at , up);
 
     if(level === 1){
@@ -233,14 +240,14 @@ function drawShadow(shape, level, x, y, x2){
         modelMatrix = mult(modelMatrix, translate(lightPosition[0]+xPos, lightPosition[1]+y, lightPosition[2]-wallSize+1));
         modelMatrix = mult(modelMatrix, shadowMatrix);
         modelMatrix = mult(modelMatrix, translate(-lightPosition[0], -lightPosition[1], -lightPosition[2]));
-        modelMatrix = mult(modelMatrix, rotateY(theta2));
+        modelMatrix = mult(modelMatrix, rotateY(theta2+theta));
     } else {
         let xPos = x*Math.cos(theta * Math.PI/180);
         xPos += x2*Math.cos((theta2+theta) * Math.PI/180);
         modelMatrix = mult(modelMatrix, translate(lightPosition[0]+xPos, lightPosition[1]+y, lightPosition[2]-wallSize+1));
         modelMatrix = mult(modelMatrix, shadowMatrix);
         modelMatrix = mult(modelMatrix, translate(-lightPosition[0], -lightPosition[1], -lightPosition[2]));
-        modelMatrix = mult(modelMatrix, rotateY(theta3));
+        modelMatrix = mult(modelMatrix, rotateY(theta3+theta2+theta));
     }
 
     gl.uniformMatrix4fv( modelView, false, flatten(modelMatrix));
@@ -249,7 +256,6 @@ function drawShadow(shape, level, x, y, x2){
     gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
 
     gl.drawArrays( gl.TRIANGLES, 0, shape.length );
-    gl.uniform1f(gl.getUniformLocation(program, "isShadow"), 0.0);
 }
 
 function configureATexture(image, id) {
