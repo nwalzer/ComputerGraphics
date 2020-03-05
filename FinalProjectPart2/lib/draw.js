@@ -6,8 +6,7 @@ function connect(){
         generateLines(); //regenerate lines
     }
 
-    let diffuseProduct = mult(lightDiffuse, colorArray[6]); //set diffuse to line color
-    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+    setDiffuseColor(colorArray[6]);
 
     gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 2.0);
 
@@ -40,29 +39,10 @@ function connect(){
                 tCoordBuff.push(texCoord[0]);
             }
         }
-        var vNormal = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(lineNormal), gl.STREAM_DRAW); //load normals
 
-        var vNormalPosition = gl.getAttribLocation( program, "vNormal");
-        gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vNormalPosition); //load normals
-
-        let tBuffer = gl.createBuffer();
-        gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer );
-        gl.bufferData( gl.ARRAY_BUFFER, flatten(tCoordBuff), gl.STATIC_DRAW );
-
-        let tPosition = gl.getAttribLocation( program, "vTexCoord" );
-        gl.vertexAttribPointer( tPosition, 2, gl.FLOAT, false, 0, 0 );
-        gl.enableVertexAttribArray( tPosition );
-
-        let pBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(linesArray[i]), gl.STREAM_DRAW); //load vertices
-
-        let vPosition = gl.getAttribLocation(program, "vPosition");
-        gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vPosition); //load vertices
+        loadNormals(lineNormal);
+        loadTexCoords(tCoordBuff);
+        loadVertices(linesArray[i]);
 
         gl.drawArrays(gl.LINE_STRIP, 0, linesArray[i].length); //draw this line
     }
@@ -71,87 +51,65 @@ function connect(){
 //Draws the given shape using the given color
 function drawShape(shape, color, isCube) {
     gl.uniform1f(gl.getUniformLocation(program, "type"), 0.0);
-    gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 0.0);
+    gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 2.0);
+
     let tCoordBuff = [];
-    for(let i = 0; i < shape.length; i++){
+    for (let i = 0; i < shape.length; i++) {
         tCoordBuff.push(texCoord[0]);
     }
 
-    let tBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(tCoordBuff), gl.STATIC_DRAW );
+    loadTexCoords(tCoordBuff);
 
-    let tPosition = gl.getAttribLocation( program, "vTexCoord" );
-    gl.vertexAttribPointer( tPosition, 2, gl.FLOAT, false, 0, 0 );
-    gl.enableVertexAttribArray( tPosition );
-
-    if(arguments.length === 4){ //if this is a .ply file
-        if(useFlat){ //if we are using flat shading
-            var vNormal = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-            gl.bufferData(gl.ARRAY_BUFFER, flatten(fileFlatNormal), gl.STREAM_DRAW); //load flat normals
+    if (arguments.length === 4) { //if this is a .ply file
+        if (useFlat && !enableRefract && !enableReflect) { //if we are using flat shading
+            loadNormals(fileFlatNormal);
         } else {
-            var vNormal = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-            gl.bufferData(gl.ARRAY_BUFFER, flatten(fileGNormal), gl.STREAM_DRAW); //load gouraud normals
+            loadNormals(fileGNormal);
         }
-    }
-    else if(isCube){ //if shape is cube
-        if(useFlat){ //if using flat shading
-            var vNormal = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-            gl.bufferData(gl.ARRAY_BUFFER, flatten(cubeFlatNormal), gl.STREAM_DRAW); //load flat normals
+    } else if (isCube) { //if shape is cube
+        if (useFlat && !enableRefract && !enableReflect) { //if using flat shading
+            console.log("Loaded Flat", enableReflect, enableRefract);
+            loadNormals(cubeFlatNormal);
         } else {
-            var vNormal = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-            gl.bufferData(gl.ARRAY_BUFFER, flatten(cubeGNormal), gl.STREAM_DRAW); //load gouraud normals
+            console.log("Loaded G");
+            loadNormals(cubeGNormal);
         }
     } else { //if shape is sphere
-        if(useFlat){ //if using flat shading
-            var vNormal = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-            gl.bufferData(gl.ARRAY_BUFFER, flatten(sphereFlatNormal), gl.STREAM_DRAW); //load flat normals
+        if (useFlat && !enableRefract && !enableReflect) { //if using flat shading
+            loadNormals(sphereFlatNormal);
         } else {
-            var vNormal = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-            gl.bufferData(gl.ARRAY_BUFFER, flatten(sphereGNormal), gl.STREAM_DRAW); //load gouraud normals
+            loadNormals(sphereGNormal);
         }
     }
 
-    var vNormalPosition = gl.getAttribLocation( program, "vNormal");
-    gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vNormalPosition); //load normals
+    setDiffuseColor(color);
+    loadVertices(shape);
 
-    let diffuseProduct = mult(lightDiffuse, color); //set diffuse lighting to use provided color
-    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+    gl.drawArrays(gl.TRIANGLES, 0, shape.length);
 
-    let pBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(shape), gl.STREAM_DRAW); //load vertices
-
-    let vPosition = gl.getAttribLocation(program,  "vPosition");
-    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vPosition); //load vertices
-
-    gl.drawArrays( gl.TRIANGLES, 0, shape.length );
-
+    if(enableShadows){
+        if (arguments.length === 4) {
+            loadNormals(fileFlatNormal)
+        } else if (isCube) {
+            loadNormals(cubeFlatNormal)
+        } else {
+            loadNormals(sphereFlatNormal)
+        }
+    }
 }
 
 //Draws the given shape using the given color
 function drawWall(wall, id) {
     gl.uniform1f(gl.getUniformLocation(program, "type"), 0.0);
 
-    let diffuseProduct = mult(lightDiffuse, colorArray[6]); //set diffuse lighting to use provided color
-    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+    setDiffuseColor(colorArray[6]);
 
     if(!enableTextures){
         gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 2.0);
         if(id === "Wall"){
-            let diffuseProduct = mult(lightDiffuse, colorArray[2]); //set diffuse lighting to use provided color
-            gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+            setDiffuseColor(colorArray[2]);
         } else {
-            let diffuseProduct = mult(lightDiffuse, colorArray[6]); //set diffuse lighting to use provided color
-            gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+            setDiffuseColor(colorArray[6]);
         }
     } else if(id === "Wall"){
         gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 1.0);
@@ -159,29 +117,9 @@ function drawWall(wall, id) {
         gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 0.0);
     }
 
-    let tBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(texCoordsArray), gl.STATIC_DRAW );
-
-    let tPosition = gl.getAttribLocation( program, "vTexCoord" );
-    gl.vertexAttribPointer( tPosition, 2, gl.FLOAT, false, 0, 0 );
-    gl.enableVertexAttribArray( tPosition );
-
-    var vNormal = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(wallNormals), gl.STREAM_DRAW); //load flat normals
-
-    var vNormalPosition = gl.getAttribLocation( program, "vNormal");
-    gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vNormalPosition); //load normals
-
-    let pBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(wall), gl.STREAM_DRAW); //load vertices
-
-    let vPosition = gl.getAttribLocation(program,  "vPosition");
-    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vPosition); //load vertices
+    loadTexCoords(texCoordsArray);
+    loadNormals(wallNormals);
+    loadVertices(wall);
 
     gl.drawArrays( gl.TRIANGLES, 0, wall.length);
 
@@ -195,8 +133,7 @@ function drawBB(box){
         gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
     }
 
-    let diffuseProduct = mult(lightDiffuse, colorArray[6]); //set diffuse to color of box
-    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+    setDiffuseColor(colorArray[6]);
 
     for(let i = 0; i < box.length; i++){ //for each face of bounding box
         let lineNormal = [];
@@ -206,21 +143,8 @@ function drawBB(box){
         for (let j = 0; j < box[i].length; j++) {
             lineNormal.push(mult(inv, lightPosition));
         }
-        var vNormal = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(lineNormal), gl.STREAM_DRAW); //load normals
-
-        var vNormalPosition = gl.getAttribLocation( program, "vNormal");
-        gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vNormalPosition); //load normals
-
-        let pBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(box[i]), gl.STREAM_DRAW); //load positions
-
-        let vPosition = gl.getAttribLocation(program, "vPosition");
-        gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vPosition); //load positions
+        loadNormals(lineNormal);
+        loadVertices(box[i]);
 
         gl.drawArrays(gl.LINE_LOOP, 0, box[i].length); //draw box face
     }
@@ -252,58 +176,42 @@ function drawShadow(shape, level, x, y, x2){
 
     gl.uniformMatrix4fv( modelView, false, flatten(modelMatrix));
 
-    let diffuseProduct = mult(lightDiffuse, colorArray[8]); //set diffuse lighting to use provided color
-    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+    setDiffuseColor(colorArray[8]);
 
     gl.drawArrays( gl.TRIANGLES, 0, shape.length );
 }
 
-function configureATexture(image, id) {
-    texture = gl.createTexture();
-    if(id === 0){
-        gl.activeTexture(gl.TEXTURE0);
-    } else {
-        gl.activeTexture(gl.TEXTURE1);
-    }
-    gl.bindTexture(gl.TEXTURE_2D, texture);
+function loadNormals(normArray){
+    var vNormal = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(normArray), gl.STREAM_DRAW); //load flat normals
 
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-
-    gl.texImage2D(
-        gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
-
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-
-    if(id === 0){
-        gl.uniform1i(gl.getUniformLocation(program, "tex0"), 0);
-    } else {
-        gl.uniform1i(gl.getUniformLocation(program, "tex1"), 1);
-    }
-
-
+    var vNormalPosition = gl.getAttribLocation(program, "vNormal");
+    gl.vertexAttribPointer(vNormalPosition, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vNormalPosition); //load normals
 }
 
-function createATexture() {
+function loadVertices(vertexArray){
+    let pBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(vertexArray), gl.STREAM_DRAW); //load vertices
 
-    var tex = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, tex);
+    let vPosition = gl.getAttribLocation(program, "vPosition");
+    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPosition); //load vertices
+}
 
-    gl.texImage2D(
-        gl.TEXTURE_2D, 0, gl.RGBA, 2, 2, 0, gl.RGBA, gl.UNSIGNED_BYTE,
-        new Uint8Array([0, 0, 255, 255, 255, 0, 0, 255, 0, 0, 255, 255, 0, 0, 255, 255])
-    );
+function loadTexCoords(coordArray){
+    let tBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(coordArray), gl.STATIC_DRAW );
 
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    let tPosition = gl.getAttribLocation( program, "vTexCoord" );
+    gl.vertexAttribPointer( tPosition, 2, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( tPosition );
+}
 
-    texCoordsArray.push(texCoord[0]);
-    texCoordsArray.push(texCoord[1]);
-    texCoordsArray.push(texCoord[2]);
-    texCoordsArray.push(texCoord[0]);
-    texCoordsArray.push(texCoord[1]);
-    texCoordsArray.push(texCoord[3]);
-
+function setDiffuseColor(color){
+    let diffuseProduct = mult(lightDiffuse, color); //set diffuse lighting to use provided color
+    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
 }

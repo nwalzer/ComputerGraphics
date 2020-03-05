@@ -14,12 +14,17 @@
 	uniform mat4 projectionMatrix;
 	uniform mat4 modelMatrix;
 	uniform vec3 lightDirection;
+	uniform float shininess, angle, vTexture, type, usingFlat, reflectVal, refractVal;
+
 	varying vec4 fColor;
+	varying vec3 reflectRay, refractRay;
 	varying vec2 fTexCoord;
-	varying float fTexture;
-	uniform float shininess, angle, vTexture, type, usingFlat;
+	varying float fTexture, reflectOn, refractOn, shapeType;
 
 	void main() {
+	    reflectOn = reflectVal;
+	    refractOn = refractVal;
+	    shapeType = type;
 	    if(type < 1.5){ //if mesh or shadow
             vec3 pos;
             vec4 normal = vNormal;
@@ -44,11 +49,11 @@
 
             if(dot(L, -lightDir) > angle){ //if in spotlight
                 diffuse = diffuseProduct * dot(L, N); //set diffuse
-                if(type < 0.9){
+                if(type < 0.9){ //if not a shadow
                     specular = specularProduct * pow(max(dot(V, R), 0.0), shininess); //set specular
                 }
-            } else if(type > 0.9){
-                return;
+            } else if(type > 0.9){ //if shadow that is outside of spotlight
+                return; //don't bother drawing
             }
 
             fColor = diffuse + specular + ambient;
@@ -57,6 +62,12 @@
             fTexture = vTexture;
             gl_Position = projectionMatrix * modelMatrix * newPos;
   		    gl_PointSize = 10.0;		// Point size
+  		    if(refractVal > 0.1){ //if we will be refracting
+  		        refractRay = refract(pos, N, 0.75); //set refract
+  		    }
+  		    if(reflectVal > 0.1){ //if we will be reflecting
+  		        reflectRay = reflect(pos, N); //set reflect
+  		    }
         } else { //if line
             vec4 normal = vNormal;
             vec3 pos = (modelMatrix * vPosition).xyz;
@@ -89,19 +100,29 @@
     <script id="fshader" type="x-shader/x-fragment">
 	precision mediump float;
 	varying vec4 fColor;
+	varying vec3 reflectRay, refractRay;
 	varying vec2 fTexCoord;
-	varying float fTexture;
+	varying float fTexture, reflectOn, refractOn, shapeType;
 
 	uniform sampler2D tex0;
     uniform sampler2D tex1;
+    uniform samplerCube cubeMap;
 
 	void main()
 	{
-	    if(fTexture < 0.9){
+	    if(fTexture < 0.9){ //if floor
 	        gl_FragColor = texture2D(tex1, fTexCoord) * fColor;
-	    } else if(fTexture < 1.5){
+	    } else if(fTexture < 1.5){ //if wall
 	        gl_FragColor = texture2D(tex0, fTexCoord) * fColor;
-	    } else {
+	    } else if(shapeType >= 0.9){ //if this is a line
+	        gl_FragColor = fColor;
+	    } else if(reflectOn > 0.1 && refractOn > 0.1){ //if refract and reflect on
+	        gl_FragColor = textureCube(cubeMap, refractRay*reflectRay)*fColor;
+	    } else if(reflectOn > 0.1){ //if reflect on
+	        gl_FragColor = textureCube(cubeMap, reflectRay)*fColor;
+	    } else if(refractOn > 0.1){ //if refract on
+	        gl_FragColor = textureCube(cubeMap, refractRay)*fColor;
+	    } else { //if neither refract nor reflect on
 	        gl_FragColor = fColor;
 	    }
   	}
@@ -113,6 +134,8 @@
     <script src="lib/fileParse.js"></script>
     <script src="lib/draw.js"></script>
     <script src="lib/shapes.js"></script>
+    <script src="lib/images.js"></script>
+
 
     <script src="main.js"></script>
 

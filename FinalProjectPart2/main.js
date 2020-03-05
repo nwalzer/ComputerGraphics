@@ -44,12 +44,13 @@ let texCoord = [
 ];
 let texture;
 
-let mvMatrix, pMatrix, wallTexture, floorTexture, shadowMatrix;
+let mvMatrix, pMatrix, wallTexture, floorTexture, shadowMatrix, cubeMap;
+let negativeX, negativeY, negativeZ, positiveX, positiveY, positiveZ;
 let modelView, projection;
-let fileUploaded = false, useFlat = true, enableSin = false, enableBB = false, enableShadows = true, enableTextures = true;
-let theta = 0, theta2 = 0, theta3 = 0, sinOffset = 0, sinTheta = 0;
+let fileUploaded = false, useFlat = true, enableSin = false, enableBB = false, enableShadows = true, enableTextures = true, enableRefract = false, enableReflect = false;
+let theta = 0, theta2 = 0, theta3 = 0, sinOffset = 0, sinTheta = 0, loadedCubeFaces = 0;
 let hor = 5, hor2 = 2, vert = 1, vert2 = -5, topVert = 5, wallSize = 20;
-const eye = vec3(0.0, 0, 30);
+const eye = vec3(0.0, 0, 22);
 const at = vec3(0.0, -1, 0.0);
 const up = vec3(0.0, 1.0, 0.0);
 
@@ -113,22 +114,7 @@ function main()
     wallCube = buildSquare(wallSize);
     wallNormals = fNormals(wallCube);
 
-    createATexture();
-
-    wallTexture = new Image();
-    wallTexture.crossOrigin = "";
-    wallTexture.src = "http://web.cs.wpi.edu/~jmcuneo/stones.bmp";
-    wallTexture.onload = function(){
-        configureATexture(wallTexture, 0);
-    };
-
-    floorTexture = new Image();
-    floorTexture.crossOrigin = "";
-    floorTexture.src = "http://web.cs.wpi.edu/~jmcuneo/grass.bmp";
-    floorTexture.onload = function(){
-        configureATexture(floorTexture, 1);
-    };
-
+    setAllImages();
 
     texCoordsArray.push(texCoord[0]);
     texCoordsArray.push(texCoord[1]);
@@ -159,7 +145,11 @@ function main()
     gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
     gl.uniform1f(gl.getUniformLocation(program, "shininess"), materialShininess);
     gl.uniform1f(gl.getUniformLocation(program, "angle"), angle);
+    gl.uniform1f(gl.getUniformLocation(program, "refractVal"), 0.0);
+    gl.uniform1f(gl.getUniformLocation(program, "reflectVal"), 0.0);
     gl.uniform1f(gl.getUniformLocation(program, "usingFlat"), 1.0);
+
+    console.log("Set uniforms");
 
     window.onkeydown = function(event) {
         let key = event.key;
@@ -194,13 +184,30 @@ function main()
             case 's':
                 updateLightDir(0.0, -0.1, 0.0); //shift light position down
                 break;
-            case 'x':
+            case 'a':
                 enableShadows = !enableShadows;
                 break;
-            case 'a':
+            case 'x':
                 updateLightDir(-0.1, 0, 0.0); //shift light position left
                 break;
             case 'd':
+                enableRefract = !enableRefract;
+                if(enableRefract){
+                    gl.uniform1f(gl.getUniformLocation(program, "refractVal"), 1.0);
+                } else {
+                    gl.uniform1f(gl.getUniformLocation(program, "refractVal"), 0.0);
+                }
+                console.log(enableRefract);
+                break;
+            case 'c':
+                enableReflect = !enableReflect;
+                if(enableReflect){
+                    gl.uniform1f(gl.getUniformLocation(program, "reflectVal"), 1.0);
+                } else {
+                    gl.uniform1f(gl.getUniformLocation(program, "reflectVal"), 0.0);
+                }
+                break;
+            case 'z':
                 updateLightDir(0.1, 0, 0.0); //shift light position right
                 break;
             case 'q':
@@ -213,6 +220,9 @@ function main()
                 enableSin = !enableSin; //toggle sinusoid
                 break;
             case 'b':
+                enableTextures = !enableTextures;
+                break;
+            case 'c':
                 enableBB = !enableBB; //toggle bounding boxes
                 break;
         }
@@ -221,6 +231,7 @@ function main()
     let fileInput = document.getElementById("custFile");
     fileInput.addEventListener("change", parseFile); //add event listener to the file upload button
 
+    console.log("Rendering");
     render();
 }
 
