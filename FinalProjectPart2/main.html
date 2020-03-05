@@ -25,10 +25,38 @@
 	    reflectOn = reflectVal;
 	    refractOn = refractVal;
 	    shapeType = type;
-	    if(type < 1.5){ //if mesh or shadow
+
+	    if(type < -0.1){
+	        vec3 pos = (modelMatrix * vPosition).xyz;
+            vec4 normal = vNormal;
+            vec3 L = normalize(lightPosition.xyz - pos); //lightPosition - vertex position
+            vec3 N = normalize(modelMatrix * normal).xyz; //transformed normal
+
+            vec3 V = normalize(-pos); //camera to vertex position
+            vec3 R = ((2.0 * dot(L, N) * N) - L).xyz; //reflection vector
+
+
+            vec4 diffuse = vec4(0.0, 0.0, 0.0, 1.0); //initialize diffuse to 0
+            vec4 ambient = ambientProduct * diffuseProduct; //assign color to ambient light
+            vec4 specular = vec4(0.0, 0.0, 0.0, 1.0); //initialize specular to 0
+            vec3 lightDir = normalize(lightDirection); //determine light direction
+            vec4 newPos = vPosition;
+
+            if(dot(L, -lightDir) > angle/2.0){ //if in spotlight
+                diffuse = diffuseProduct * dot(L, N); //set diffuse
+                specular = specularProduct * pow(max(dot(V, R), 0.0), shininess); //set specular
+            }
+
+            fColor = diffuse + specular + ambient;
+            fColor.a = 1.0;
+            fTexCoord = vTexCoord;
+            fTexture = vTexture;
+            gl_Position = projectionMatrix * modelMatrix * newPos;
+  		    gl_PointSize = 10.0;		// Point size
+	    } else if(type < 1.5){ //if mesh or shadow
             vec3 pos;
             vec4 normal = vNormal;
-            if(usingFlat > 0.5){
+            if(usingFlat > 0.5 && type < 0.9){
                 pos = (modelMatrix * normal).xyz; //vertex position
                 normal.a = 0.0;
             } else {

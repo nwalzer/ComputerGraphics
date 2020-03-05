@@ -100,7 +100,7 @@ function drawShape(shape, color, isCube) {
 
 //Draws the given shape using the given color
 function drawWall(wall, id) {
-    gl.uniform1f(gl.getUniformLocation(program, "type"), 0.0);
+    gl.uniform1f(gl.getUniformLocation(program, "type"), -1.0);
 
     setDiffuseColor(colorArray[6]);
 
