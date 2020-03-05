@@ -19,8 +19,8 @@ let vd = vec4(0.816497, -0.471405, 0.333333,1);
 let numTimesToSubdivide = 5;
 let index = 0;
 
-let lightPosition = vec4(0, 5, 10, 1.0 );
-let lightDirection = vec3(1, 0, -5);
+let lightPosition = vec4(0, 0, 14, 1.0 );
+let lightDirection = vec3(0, 0, -5);
 var lightAmbient = vec4(0.3, 0.3, 0.3, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -50,7 +50,7 @@ let modelView, projection;
 let fileUploaded = false, useFlat = true, enableSin = false, enableBB = false, enableShadows = true, enableTextures = true, enableRefract = false, enableReflect = false;
 let theta = 0, theta2 = 0, theta3 = 0, sinOffset = 0, sinTheta = 0, loadedCubeFaces = 0;
 let hor = 5, hor2 = 2, vert = 1, vert2 = -5, topVert = 5, wallSize = 20;
-const eye = vec3(0.0, 0, 22);
+const eye = vec3(0.0, 0, 26);
 const at = vec3(0.0, -1, 0.0);
 const up = vec3(0.0, 1.0, 0.0);
 
@@ -156,13 +156,13 @@ function main()
         switch(key){
             case 'p':
                 if(angle > 0){ //increase angle
-                    angle -= 0.01;
+                    angle -= 0.005;
                 }
                 gl.uniform1f(gl.getUniformLocation(program, "angle"), angle);
                 break;
             case 'i':
                 if(angle < 1){ //decrease angle
-                    angle += 0.01;
+                    angle += 0.005;
                 }
                 gl.uniform1f(gl.getUniformLocation(program, "angle"), angle);
                 break;
@@ -176,25 +176,22 @@ function main()
                 useFlat = true; //change to flat
                 var shadeType = document.getElementById("shadeType");
                 shadeType.innerText = "You are currently using Flat Shading";
-                gl.uniform1f(gl.getUniformLocation(program, "usingFlat"), 1.0);
-                break;
-            case 'w':
-                updateLightDir(0.0, 0.1, 0.0); //shift light direction up
-                break;
-            case 's':
-                updateLightDir(0.0, -0.1, 0.0); //shift light position down
+                if(!enableRefract && !enableReflect){
+                    gl.uniform1f(gl.getUniformLocation(program, "usingFlat"), 1.0);
+                }
                 break;
             case 'a':
                 enableShadows = !enableShadows;
                 break;
-            case 'x':
-                updateLightDir(-0.1, 0, 0.0); //shift light position left
-                break;
             case 'd':
                 enableRefract = !enableRefract;
                 if(enableRefract){
+                    gl.uniform1f(gl.getUniformLocation(program, "usingFlat"), 0.0);
                     gl.uniform1f(gl.getUniformLocation(program, "refractVal"), 1.0);
                 } else {
+                    if(!enableReflect && useFlat){
+                        gl.uniform1f(gl.getUniformLocation(program, "usingFlat"), 1.0);
+                    }
                     gl.uniform1f(gl.getUniformLocation(program, "refractVal"), 0.0);
                 }
                 console.log(enableRefract);
@@ -202,19 +199,14 @@ function main()
             case 'c':
                 enableReflect = !enableReflect;
                 if(enableReflect){
+                    gl.uniform1f(gl.getUniformLocation(program, "usingFlat"), 0.0);
                     gl.uniform1f(gl.getUniformLocation(program, "reflectVal"), 1.0);
                 } else {
+                    if(!enableRefract && useFlat){
+                        gl.uniform1f(gl.getUniformLocation(program, "usingFlat"), 1.0);
+                    }
                     gl.uniform1f(gl.getUniformLocation(program, "reflectVal"), 0.0);
                 }
-                break;
-            case 'z':
-                updateLightDir(0.1, 0, 0.0); //shift light position right
-                break;
-            case 'q':
-                updateLightDir(0, 0, 0.1); //shift light position closer
-                break;
-            case 'e':
-                updateLightDir(0, 0, -0.1); //shift light position further
                 break;
             case 'v':
                 enableSin = !enableSin; //toggle sinusoid
@@ -222,7 +214,7 @@ function main()
             case 'b':
                 enableTextures = !enableTextures;
                 break;
-            case 'c':
+            case 'x':
                 enableBB = !enableBB; //toggle bounding boxes
                 break;
         }
@@ -231,18 +223,7 @@ function main()
     let fileInput = document.getElementById("custFile");
     fileInput.addEventListener("change", parseFile); //add event listener to the file upload button
 
-    console.log("Rendering");
     render();
-}
-
-//Translates light direction by x, y, z
-function updateLightDir(x, y, z){
-    lightDirection[0] += x;
-    lightDirection[1] += y;
-    lightDirection[2] += z;
-    var lightDir = document.getElementById("lightDir");
-    lightDir.innerText = "The light is pointing at: (" + lightDirection[0] + ", " + lightDirection[1] + ", " + lightDirection[2] + ")";
-    gl.uniform3fv(gl.getUniformLocation(program, "lightDirection"), flatten(lightDirection));
 }
 
 
@@ -264,14 +245,14 @@ function render() {
 
     mvMatrix = lookAt(eye, at , up); //calculate model matrix
     stack.push(mvMatrix); //push initial model matrix
-        mvMatrix = mult(mvMatrix, translate(wallSize/1.5, 0, 0)); //position left wall
+        mvMatrix = mult(mvMatrix, translate(wallSize/1.25, 0, 0)); //position left wall
         mvMatrix = mult(mvMatrix, rotateY(270));
         gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
         drawWall(wallCube, "Wall"); //draw left wall
     mvMatrix = stack.pop();
 
     stack.push(mvMatrix);
-        mvMatrix = mult(mvMatrix, translate(-wallSize/1.5, 0, 0)); //position right wall
+        mvMatrix = mult(mvMatrix, translate(-wallSize/1.25, 0, 0)); //position right wall
         mvMatrix = mult(mvMatrix, rotateY(-270));
         gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
         drawWall(wallCube, "Wall"); //draw right wall
@@ -307,7 +288,7 @@ function render() {
             mvMatrix = mult(mvMatrix, translate(0, -sinOffset, 0)); //shift by -vertical offset
             gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
             drawShape(shapeArray[1], colorArray[3], false); //level 3 sphere
-            if(enableShadows) drawShadow(shapeArray[1], 3, hor, vert+vert2, hor2);
+            if(enableShadows) drawShadow(shapeArray[1], 3, hor, vert+vert2-sinOffset, hor2);
             if(enableBB) drawBB(sphereBB);
         mvMatrix = stack.pop();
         stack.push(mvMatrix);
@@ -315,7 +296,7 @@ function render() {
             mvMatrix = mult(mvMatrix, translate(0, sinOffset, 0)); //shift by vertical offset
             gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
             drawShape(shapeArray[0], colorArray[1], true); //level 3 cube
-            if(enableShadows) drawShadow(shapeArray[0], 3, hor, vert+vert2, -hor2);
+            if(enableShadows) drawShadow(shapeArray[0], 3, hor, vert+vert2+sinOffset, -hor2);
             if(enableBB)drawBB(cubeBB);
         mvMatrix = stack.pop();
         mvMatrix = stack.pop(); //pop one of the original copies off
@@ -335,7 +316,7 @@ function render() {
             mvMatrix = mult(mvMatrix, translate(0, sinOffset, 0)); //translate by vertical offset
             gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
             drawShape(shapeArray[1], colorArray[5], false); //level 3 sphere
-            if(enableShadows) drawShadow(shapeArray[1], 3, -hor, vert+vert2, -hor2);
+            if(enableShadows) drawShadow(shapeArray[1], 3, -hor, vert+vert2+sinOffset, -hor2);
             if(enableBB) drawBB(sphereBB);
         mvMatrix = stack.pop();
         if(fileUploaded){ //for custom uploaded .ply files
@@ -344,7 +325,7 @@ function render() {
                 mvMatrix = mult(mvMatrix, translate(0, -sinOffset, 0)); //translate by -vertical offset
                 gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
                 drawShape(shapeArray[2], colorArray[7], false, true); //draw file
-                if(enableShadows) drawShadow(shapeArray[2], 3, -hor, vert+vert2, hor2);
+                if(enableShadows) drawShadow(shapeArray[2], 3, -hor, vert+vert2-sinOffset, hor2);
                 drawBB(fileBB); //draw file bounding box
             mvMatrix = stack.pop();
         }

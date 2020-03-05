@@ -145,7 +145,7 @@
 	    } else if(shapeType >= 0.9){ //if this is a line
 	        gl_FragColor = fColor;
 	    } else if(reflectOn > 0.1 && refractOn > 0.1){ //if refract and reflect on
-	        gl_FragColor = textureCube(cubeMap, refractRay*reflectRay)*fColor;
+	        gl_FragColor = textureCube(cubeMap, refractRay+reflectRay)*fColor;
 	    } else if(reflectOn > 0.1){ //if reflect on
 	        gl_FragColor = textureCube(cubeMap, reflectRay)*fColor;
 	    } else if(refractOn > 0.1){ //if refract on

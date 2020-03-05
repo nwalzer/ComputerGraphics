@@ -68,10 +68,8 @@ function drawShape(shape, color, isCube) {
         }
     } else if (isCube) { //if shape is cube
         if (useFlat && !enableRefract && !enableReflect) { //if using flat shading
-            console.log("Loaded Flat", enableReflect, enableRefract);
             loadNormals(cubeFlatNormal);
         } else {
-            console.log("Loaded G");
             loadNormals(cubeGNormal);
         }
     } else { //if shape is sphere
@@ -152,27 +150,19 @@ function drawBB(box){
 
 function drawShadow(shape, level, x, y, x2){
     gl.uniform1f(gl.getUniformLocation(program, "type"), 1.0);
-    let modelMatrix = lookAt(eye, at , up);
+    let modelMatrix = mult(shadowMatrix, mvMatrix);
 
+    let xPos;
+    let yPos = 0;
     if(level === 1){
-        modelMatrix = mult(modelMatrix, translate(lightPosition[0]+x, lightPosition[1]+y, lightPosition[2]-wallSize+1));
-        modelMatrix = mult(modelMatrix, shadowMatrix);
-        modelMatrix = mult(modelMatrix, translate(-lightPosition[0], -lightPosition[1], -lightPosition[2]));
-        modelMatrix = mult(modelMatrix, rotateY(theta));
+        yPos += 5;
     } else if(level === 2){
-        let xPos = x*Math.cos(theta * Math.PI/180);
-        modelMatrix = mult(modelMatrix, translate(lightPosition[0]+xPos, lightPosition[1]+y, lightPosition[2]-wallSize+1));
-        modelMatrix = mult(modelMatrix, shadowMatrix);
-        modelMatrix = mult(modelMatrix, translate(-lightPosition[0], -lightPosition[1], -lightPosition[2]));
-        modelMatrix = mult(modelMatrix, rotateY(theta2+theta));
+        xPos = x*Math.cos(theta * Math.PI/180);
     } else {
-        let xPos = x*Math.cos(theta * Math.PI/180);
+        xPos = x*Math.cos(theta * Math.PI/180);
         xPos += x2*Math.cos((theta2+theta) * Math.PI/180);
-        modelMatrix = mult(modelMatrix, translate(lightPosition[0]+xPos, lightPosition[1]+y, lightPosition[2]-wallSize+1));
-        modelMatrix = mult(modelMatrix, shadowMatrix);
-        modelMatrix = mult(modelMatrix, translate(-lightPosition[0], -lightPosition[1], -lightPosition[2]));
-        modelMatrix = mult(modelMatrix, rotateY(theta3+theta2+theta));
     }
+    modelMatrix = mult(translate(xPos, yPos, -wallSize), modelMatrix);
 
     gl.uniformMatrix4fv( modelView, false, flatten(modelMatrix));
 
