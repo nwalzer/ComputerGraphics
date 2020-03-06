@@ -25,8 +25,8 @@ var lightAmbient = vec4(0.3, 0.3, 0.3, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 
-var materialAmbient = vec4( 1.0, 1.0, 1.0, 1.0 );
-var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
+var materialAmbient = vec4(1.0, 1.0, 1.0, 1.0);
+var materialSpecular = vec4(1.0, 1.0, 1.0, 1.0);
 var materialShininess = 20.0;
 var angle = 0.9;
 
@@ -35,19 +35,15 @@ let program;
 
 let minT = 0.0, maxT = 5.0;
 
-let texCoordsArray = [];
-let texCoord = [
-    vec2(minT, minT),
-    vec2(minT, maxT),
-    vec2(maxT, maxT),
-    vec2(maxT, minT)
-];
+let texCoordsArray;
+let texCoord;
 let texture;
 
 let mvMatrix, pMatrix, wallTexture, floorTexture, shadowMatrix, cubeMap;
 let negativeX, negativeY, negativeZ, positiveX, positiveY, positiveZ;
 let modelView, projection;
-let fileUploaded = false, useFlat = true, enableSin = false, enableBB = false, enableShadows = true, enableTextures = true, enableRefract = false, enableReflect = false;
+let fileUploaded = false, useFlat = true, enableSin = false, enableBB = false, enableShadows = true,
+    enableTextures = true, enableRefract = false, enableReflect = false;
 let theta = 0, theta2 = 0, theta3 = 0, sinOffset = 0, sinTheta = 0, loadedCubeFaces = 0;
 let hor = 5, hor2 = 2, vert = 1, vert2 = -5, topVert = 5, wallSize = 20;
 const eye = vec3(0.0, 0, 26);
@@ -115,13 +111,7 @@ function main()
     wallNormals = fNormals(wallCube);
 
     setAllImages();
-
-    texCoordsArray.push(texCoord[0]);
-    texCoordsArray.push(texCoord[1]);
-    texCoordsArray.push(texCoord[2]);
-    texCoordsArray.push(texCoord[0]);
-    texCoordsArray.push(texCoord[2]);
-    texCoordsArray.push(texCoord[3]);
+    setTexCoords();
 
     shadowMatrix = mat4();
     shadowMatrix[3][3] = 0;
@@ -217,6 +207,18 @@ function main()
             case 'x':
                 enableBB = !enableBB; //toggle bounding boxes
                 break;
+            case '+':
+                if (maxT < 10) { //increase tiling frequency
+                    maxT++;
+                }
+                setTexCoords();
+                break;
+            case '-':
+                if (maxT > 0) { //decrease tiling frequency
+                    maxT--;
+                }
+                setTexCoords();
+                break;
         }
     };
 
@@ -226,6 +228,23 @@ function main()
     render();
 }
 
+//sets the texCoordsArray values to reflect the current min and max T
+function setTexCoords() {
+    texCoord = [
+        vec2(minT, minT),
+        vec2(minT, maxT),
+        vec2(maxT, maxT),
+        vec2(maxT, minT)
+    ];
+
+    texCoordsArray = [];
+    texCoordsArray.push(texCoord[0]);
+    texCoordsArray.push(texCoord[1]);
+    texCoordsArray.push(texCoord[2]);
+    texCoordsArray.push(texCoord[0]);
+    texCoordsArray.push(texCoord[2]);
+    texCoordsArray.push(texCoord[3]);
+}
 
 //update drawing
 function render() {

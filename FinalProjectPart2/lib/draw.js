@@ -63,19 +63,19 @@ function drawShape(shape, color, isCube) {
     if (arguments.length === 4) { //if this is a .ply file
         if (useFlat && !enableRefract && !enableReflect) { //if we are using flat shading
             loadNormals(fileFlatNormal);
-        } else {
+        } else { //reflection and refraction need to use gouraud shading
             loadNormals(fileGNormal);
         }
     } else if (isCube) { //if shape is cube
         if (useFlat && !enableRefract && !enableReflect) { //if using flat shading
             loadNormals(cubeFlatNormal);
-        } else {
+        } else { //reflection and refraction need to use gouraud shading
             loadNormals(cubeGNormal);
         }
     } else { //if shape is sphere
         if (useFlat && !enableRefract && !enableReflect) { //if using flat shading
             loadNormals(sphereFlatNormal);
-        } else {
+        } else { //reflection and refraction need to use gouraud shading
             loadNormals(sphereGNormal);
         }
     }
@@ -85,7 +85,7 @@ function drawShape(shape, color, isCube) {
 
     gl.drawArrays(gl.TRIANGLES, 0, shape.length);
 
-    if(enableShadows){
+    if (enableShadows) { //if shadows are enabled
         if (arguments.length === 4) {
             loadNormals(fileFlatNormal)
         } else if (isCube) {
@@ -100,19 +100,19 @@ function drawShape(shape, color, isCube) {
 function drawWall(wall, id) {
     gl.uniform1f(gl.getUniformLocation(program, "type"), -1.0);
 
-    setDiffuseColor(colorArray[6]);
+    setDiffuseColor(colorArray[6]); //set to gray
 
-    if(!enableTextures){
-        gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 2.0);
-        if(id === "Wall"){
-            setDiffuseColor(colorArray[2]);
+    if (!enableTextures) { //if textures are off
+        gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 2.0); //make program not use textures
+        if (id === "Wall") { //if wall
+            setDiffuseColor(colorArray[2]); //set to blue
         } else {
-            setDiffuseColor(colorArray[6]);
+            setDiffuseColor(colorArray[6]); //set to gray
         }
-    } else if(id === "Wall"){
-        gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 1.0);
+    } else if (id === "Wall") { //if wall
+        gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 1.0); //use wall texture
     } else {
-        gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 0.0);
+        gl.uniform1f(gl.getUniformLocation(program, "vTexture"), 0.0); //use floor texture
     }
 
     loadTexCoords(texCoordsArray);
@@ -120,13 +120,13 @@ function drawWall(wall, id) {
     loadVertices(wall);
 
     gl.drawArrays( gl.TRIANGLES, 0, wall.length);
-
 }
 
 //draws a given bounding box
 function drawBB(box){
     gl.uniform1f(gl.getUniformLocation(program, "type"), 2.0);
 
+    //because shadows overwrite the previous modelView matrix, reload the actual matrix
     if(enableShadows){
         gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix));
     }
@@ -148,6 +148,7 @@ function drawBB(box){
     }
 }
 
+//draw the shadow for the given shape a the given level and (x+x2, y)
 function drawShadow(shape, level, x, y, x2){
     gl.uniform1f(gl.getUniformLocation(program, "type"), 1.0);
     let modelMatrix = mult(shadowMatrix, mvMatrix);
@@ -157,9 +158,9 @@ function drawShadow(shape, level, x, y, x2){
     /*if(level === 1){
     } else*/
     if (level === 2) {
-        xPos = x * Math.cos(theta * Math.PI / 180);
+        xPos = x * Math.cos(theta * Math.PI / 180); //calculate x offset using top level angle
     } else {
-        xPos = x * Math.cos(theta * Math.PI / 180);
+        xPos = x * Math.cos(theta * Math.PI / 180); //calculate x offset using top and second level angles
         xPos += x2 * Math.cos((theta2 + theta) * Math.PI / 180);
     }
     modelMatrix = mult(translate(xPos, yPos, -wallSize), modelMatrix);
@@ -171,6 +172,7 @@ function drawShadow(shape, level, x, y, x2){
     gl.drawArrays( gl.TRIANGLES, 0, shape.length );
 }
 
+//load the given normals into vNormal
 function loadNormals(normArray){
     var vNormal = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vNormal);
@@ -181,6 +183,7 @@ function loadNormals(normArray){
     gl.enableVertexAttribArray(vNormalPosition); //load normals
 }
 
+//load the given vertices into vPosition
 function loadVertices(vertexArray){
     let pBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, pBuffer);
@@ -191,16 +194,18 @@ function loadVertices(vertexArray){
     gl.enableVertexAttribArray(vPosition); //load vertices
 }
 
+//load the given texture coordinates into vTexCoord
 function loadTexCoords(coordArray){
     let tBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(coordArray), gl.STATIC_DRAW );
+    gl.bindBuffer(gl.ARRAY_BUFFER, tBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(coordArray), gl.STREAM_DRAW);
 
     let tPosition = gl.getAttribLocation( program, "vTexCoord" );
     gl.vertexAttribPointer( tPosition, 2, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( tPosition );
 }
 
+//set the diffuse color
 function setDiffuseColor(color){
     let diffuseProduct = mult(lightDiffuse, color); //set diffuse lighting to use provided color
     gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
