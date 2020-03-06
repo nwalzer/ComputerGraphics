@@ -1,39 +1,35 @@
 /* EXTRA CREDIT FEATURES
     Press V to toggle sinusoid y-axis transition of 3rd level hierarchy
-    Press B to toggle drawing bounding boxes around cubes and spheres
+    Press X to toggle drawing bounding boxes around cubes and spheres
     Upload any of the .ply files from project 2 to be one of the models
-    Use W, A, S, D, Q, E to change the direction of the lighting
+    Press + to increase tiling frequency
+    Press - to decrease tiling frequency
  */
 
 //a lot of these variables were taken directly from class examples
 let shapeArray = [], colorArray = [], sphereArray = [], linesArray = [], fileFaces = [];
-let cubeFlatNormal = [], cubeGNormal = [], sphereFlatNormal = [], sphereGNormal = [], fileFlatNormal = [], fileGNormal = [];
+let cubeFlatNormal = [], cubeGNormal = [], sphereFlatNormal = [], sphereGNormal = [], fileFlatNormal = [],
+    fileGNormal = [];
 let sphereBB = [], cubeBB = [], fileBB = [];
 let wallCube = [], wallNormals = [];
 
 let gl;
-let va = vec4(0.0, 0.0, -1.0,1);
-let vb = vec4(0.0, 0.942809, 0.333333, 1);
-let vc = vec4(-0.816497, -0.471405, 0.333333, 1);
-let vd = vec4(0.816497, -0.471405, 0.333333,1);
-let numTimesToSubdivide = 5;
-let index = 0;
+let va = vec4(0.0, 0.0, -1.0, 1), vb = vec4(0.0, 0.942809, 0.333333, 1), vc = vec4(-0.816497, -0.471405, 0.333333, 1),
+    vd = vec4(0.816497, -0.471405, 0.333333, 1);
+let numTimesToSubdivide = 5, index = 0;
 
-let lightPosition = vec4(0, 0, 14, 1.0 );
-let lightDirection = vec3(0, 0, -5);
-var lightAmbient = vec4(0.3, 0.3, 0.3, 1.0 );
-var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
-var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
+let lightPosition = vec4(0, 0, 14, 1.0);
+let lightDirection = vec3(0, -1, -5);
+let lightAmbient = vec4(0.3, 0.3, 0.3, 1.0), lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0),
+    lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
 
-var materialAmbient = vec4(1.0, 1.0, 1.0, 1.0);
-var materialSpecular = vec4(1.0, 1.0, 1.0, 1.0);
-var materialShininess = 20.0;
-var angle = 0.9;
+let materialAmbient = vec4(1.0, 1.0, 1.0, 1.0), materialSpecular = vec4(1.0, 1.0, 1.0, 1.0), materialShininess = 20.0;
+let angle = 0.9;
 
-let fovy = 45.0;  // Field-of-view in Y direction angle (in degrees)
+let fovy = 45.0;
 let program;
 
-let minT = 0.0, maxT = 5.0;
+let minT = 0.0, maxT = 3.0;
 
 let texCoordsArray;
 let texCoord;
@@ -83,8 +79,7 @@ function main()
     gl.cullFace(gl.BACK); //enable depth testing and backface culling
 
 
-
-    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     tetrahedron(va, vb, vc, vd, numTimesToSubdivide); //build sphere
 
     shapeArray.push(cube());
@@ -93,29 +88,29 @@ function main()
     colorArray.push(vec4(0.0, 0.0, 1.0, 1.0)); //blue cube
     cubeFlatNormal = fNormals(shapeArray[0]); //calculate cube flat normals
     cubeGNormal = gNormals(shapeArray[0]); //calculate cube gouraud normals
-    cubeBB = generateBB(0.5, 0.5, 0.5);
+    cubeBB = generateBB(0.5, 0.5, 0.5); //calculate cube bounding box
 
     shapeArray.push(sphereArray); //load sphere
     colorArray.push(vec4(1.0, 0.0, 1.0, 1.0)); //magenta sphere
     colorArray.push(vec4(1.0, 1.0, 0.0, 1.0)); //yellow sphere
     colorArray.push(vec4(0.0, 1.0, 1.0, 1.0)); //cyan sphere
     sphereFlatNormal = fNormals(shapeArray[1]); //calculate sphere flat normals
-    sphereGNormal = gNormals(shapeArray[1]);
-    sphereBB = generateBB(1, 1, 1);
+    sphereGNormal = gNormals(shapeArray[1]); //calculate sphere gouraud normals
+    sphereBB = generateBB(1, 1, 1); //calculate sphere bounding box
 
-    colorArray.push(vec4(1.0, 1.0, 1.0, 1.0)); //White Lines
+    colorArray.push(vec4(1.0, 1.0, 1.0, 1.0)); //white Lines
     colorArray.push(vec4(1.0, 0.4, 0.0, 1.0)); //orange file color
     colorArray.push(vec4(0.0, 0.0, 0.0, 1.0)); //black shadow
 
-    wallCube = buildSquare(wallSize);
-    wallNormals = fNormals(wallCube);
+    wallCube = buildSquare(wallSize); //build a single wall
+    wallNormals = fNormals(wallCube); //calculate flat normals for the wall
 
-    setAllImages();
-    setTexCoords();
+    setAllImages(); //load textures
+    setTexCoords(); //load texture coordinates
 
     shadowMatrix = mat4();
     shadowMatrix[3][3] = 0;
-    shadowMatrix[3][2] = -1/lightPosition[2];
+    shadowMatrix[3][2] = -1 / lightPosition[2];
 
     generateLines(); //generate the lines that will connect all of the models together
 
@@ -166,33 +161,32 @@ function main()
                 useFlat = true; //change to flat
                 var shadeType = document.getElementById("shadeType");
                 shadeType.innerText = "You are currently using Flat Shading";
-                if(!enableRefract && !enableReflect){
+                if (!enableRefract && !enableReflect) {
                     gl.uniform1f(gl.getUniformLocation(program, "usingFlat"), 1.0);
                 }
                 break;
             case 'a':
-                enableShadows = !enableShadows;
+                enableShadows = !enableShadows; //toggle shadows
                 break;
             case 'd':
-                enableRefract = !enableRefract;
-                if(enableRefract){
+                enableRefract = !enableRefract; //toggle refraction
+                if (enableRefract) {
                     gl.uniform1f(gl.getUniformLocation(program, "usingFlat"), 0.0);
                     gl.uniform1f(gl.getUniformLocation(program, "refractVal"), 1.0);
                 } else {
-                    if(!enableReflect && useFlat){
+                    if (!enableReflect && useFlat) {
                         gl.uniform1f(gl.getUniformLocation(program, "usingFlat"), 1.0);
                     }
                     gl.uniform1f(gl.getUniformLocation(program, "refractVal"), 0.0);
                 }
-                console.log(enableRefract);
                 break;
             case 'c':
-                enableReflect = !enableReflect;
-                if(enableReflect){
+                enableReflect = !enableReflect; //toggle reflection
+                if (enableReflect) {
                     gl.uniform1f(gl.getUniformLocation(program, "usingFlat"), 0.0);
                     gl.uniform1f(gl.getUniformLocation(program, "reflectVal"), 1.0);
                 } else {
-                    if(!enableRefract && useFlat){
+                    if (!enableRefract && useFlat) {
                         gl.uniform1f(gl.getUniformLocation(program, "usingFlat"), 1.0);
                     }
                     gl.uniform1f(gl.getUniformLocation(program, "reflectVal"), 0.0);
@@ -202,7 +196,7 @@ function main()
                 enableSin = !enableSin; //toggle sinusoid
                 break;
             case 'b':
-                enableTextures = !enableTextures;
+                enableTextures = !enableTextures; //toggle textures
                 break;
             case 'x':
                 enableBB = !enableBB; //toggle bounding boxes
@@ -244,6 +238,7 @@ function setTexCoords() {
     texCoordsArray.push(texCoord[0]);
     texCoordsArray.push(texCoord[2]);
     texCoordsArray.push(texCoord[3]);
+    document.getElementById("tilingFreq").innerText = "The tiling frequency is currently set to: " + maxT
 }
 
 //update drawing

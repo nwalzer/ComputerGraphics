@@ -1,8 +1,8 @@
 NO FILE UPLOADS ARE NEEDED TO RUN THE PROGRAM. ALL SPHERE AND CUBE GENERATION IS DONE
 WITHIN THE PROGRAM.
 
-The light is located at (7, 3, 3, 1)
-The light is pointed in direction (-1, 0, -5)
+The light is located at (0, 0, 14, 1)
+The light is pointed in direction (0, -1, -5)
 
 The program is structured as follows:
 
@@ -23,6 +23,9 @@ shapes.js:
     cube and sphere generation, updating the connecting lines, and creating bounding
     boxes
 
+images.js:
+    Contains the code to set all textures and environment maps, both default and images
+
 Features:
     'i':
         Pressing 'i' decreases the spotlight angle
@@ -32,16 +35,25 @@ Features:
         Pressing 'm' enables Gouraud shading
     'n':
         Pressing 'n' enables flat shading
+    'a':
+        Pressing 'a' toggles shadows
+    'd':
+        Pressing 'd' toggles refraction
+    'c':
+        Pressing 'c' toggles reflection
+    'b':
+        Pressing 'b' toggles textures
 
 Extra Features:
-    Adjust lighting direction:
-        w, a, s, d, q, e adjust the lighting in the given direction (w = up, a = left,
-        s = down, d = right, q = closer, e = deeper)
     'v':
         Pressing 'v' toggles the sinusoid y-axis translation of the objects in the third
         level hierarchy
-    'b':
-        Pressing 'b' toggles whether bounding boxes are drawn around each cube and sphere
+    'x':
+        Pressing 'x' toggles whether bounding boxes are drawn around each cube and sphere
     File upload:
         You can upload any of the .ply files from project 2 and it will take the place
-        of the final piece of the 3rd level hierarchy.
+        of the final piece of the 3rd level hierarchy
+    '+':
+        Pressing '+' increases the frequency of tiling the wall and floor textures
+    '-':
+        Pressing '-' decreases the frequency of tiling the wall and floor textures

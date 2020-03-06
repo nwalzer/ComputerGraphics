@@ -1,3 +1,4 @@
+//load all images and create default textures
 function setAllImages(){
     createATexture();
     configureCubeMap();
@@ -66,6 +67,7 @@ function setAllImages(){
     };
 }
 
+//configure a default texture
 function createATexture() {
     var tex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -80,6 +82,7 @@ function createATexture() {
     console.log("Default Texture Set");
 }
 
+//configure a texture using the supplied image
 function configureATexture(image, id) {
     texture = gl.createTexture();
     if (id === 0) {
@@ -106,6 +109,7 @@ function configureATexture(image, id) {
     console.log("Loaded Background Texture: " + id);
 }
 
+//once all textures are loaded, configure full environment map
 function configureCubeMapImage() {
     if(loadedCubeFaces !== 6){
         return;
@@ -133,6 +137,7 @@ function configureCubeMapImage() {
     console.log("Environment Map Set");
 }
 
+//configure default cube map
 function configureCubeMap() {
     cubeMap = gl.createTexture();
 

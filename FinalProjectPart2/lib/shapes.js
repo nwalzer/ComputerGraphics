@@ -36,6 +36,7 @@ function quad(a, b, c, d) {
     return verts;
 }
 
+//build a square of the given size
 function buildSquare(size){
     let a = vec4( size, -size,  0, 1.0 ); //bottom left front  0
     let b = vec4( size,  size,  0, 1.0 ); //top left front     1
