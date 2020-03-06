@@ -33,7 +33,7 @@ var angle = 0.9;
 let fovy = 45.0;  // Field-of-view in Y direction angle (in degrees)
 let program;
 
-let minT = 0.0, maxT = 1.0;
+let minT = 0.0, maxT = 5.0;
 
 let texCoordsArray = [];
 let texCoord = [
@@ -120,7 +120,7 @@ function main()
     texCoordsArray.push(texCoord[1]);
     texCoordsArray.push(texCoord[2]);
     texCoordsArray.push(texCoord[0]);
-    texCoordsArray.push(texCoord[1]);
+    texCoordsArray.push(texCoord[2]);
     texCoordsArray.push(texCoord[3]);
 
     shadowMatrix = mat4();

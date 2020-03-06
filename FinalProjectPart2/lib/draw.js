@@ -154,17 +154,17 @@ function drawShadow(shape, level, x, y, x2){
 
     let xPos;
     let yPos = 0;
-    if(level === 1){
-        yPos += 5;
-    } else if(level === 2){
-        xPos = x*Math.cos(theta * Math.PI/180);
+    /*if(level === 1){
+    } else*/
+    if (level === 2) {
+        xPos = x * Math.cos(theta * Math.PI / 180);
     } else {
-        xPos = x*Math.cos(theta * Math.PI/180);
-        xPos += x2*Math.cos((theta2+theta) * Math.PI/180);
+        xPos = x * Math.cos(theta * Math.PI / 180);
+        xPos += x2 * Math.cos((theta2 + theta) * Math.PI / 180);
     }
     modelMatrix = mult(translate(xPos, yPos, -wallSize), modelMatrix);
 
-    gl.uniformMatrix4fv( modelView, false, flatten(modelMatrix));
+    gl.uniformMatrix4fv(modelView, false, flatten(modelMatrix));
 
     setDiffuseColor(colorArray[8]);
 
